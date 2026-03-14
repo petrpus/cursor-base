@@ -1,0 +1,16 @@
+---
+description: UI adoption first
+alwaysApply: false
+globs:
+  - "**/*.{tsx,jsx,css,scss}"
+  - "**/components/**"
+  - "**/routes/**"
+---
+
+Before introducing or reshaping UI patterns, read (project context in docs/ai; universal policy in .cursor/docs):
+- `docs/ai/ui-stack.md`
+- `docs/ai/ui-patterns.md`
+- `docs/ai/design-system.md`
+- `.cursor/docs/tooling-policy.md`
+
+If the repository UI conventions are unclear, use `ui-stack-adapter` first.

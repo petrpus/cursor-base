@@ -1,0 +1,14 @@
+---
+description: Local dev runtime routing
+alwaysApply: false
+---
+
+Use these commands for local runtime management:
+- `bash .cursor/local/bin/up.sh`
+- `bash .cursor/local/bin/down.sh`
+- `bash .cursor/local/bin/restart.sh`
+- `bash .cursor/local/bin/status.sh`
+- `bash .cursor/local/bin/monitor.sh`
+- `bash .cursor/local/bin/logs.sh <service>`
+
+If a task involves local runtime state, background services, or logs, use the `dev-runtime` subagent instead of ad hoc process management.

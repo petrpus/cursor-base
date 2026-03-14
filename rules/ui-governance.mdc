@@ -1,0 +1,14 @@
+---
+description: UI governance routing
+alwaysApply: false
+globs:
+  - "**/*.{tsx,jsx,css,scss}"
+  - "**/components/**"
+  - "**/routes/**"
+  - ".cursor/docs/**/*"
+  - "docs/ai/*.md"
+---
+
+For non-trivial UI changes, consult the matching UI specialists before implementation.
+Prefer existing repository conventions over invented patterns.
+Shared UI changes must go through design-system review.

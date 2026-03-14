@@ -1,0 +1,37 @@
+{
+  "sessionStart": [
+    {
+      "command": "node .cursor/local/bin/cursor-chat-logger.mjs sessionStart"
+    }
+  ],
+  "sessionEnd": [
+    {
+      "command": "node .cursor/local/bin/cursor-chat-logger.mjs sessionEnd"
+    }
+  ],
+  "preToolUse": [
+    {
+      "command": "node .cursor/local/bin/cursor-chat-logger.mjs preToolUse"
+    }
+  ],
+  "postToolUse": [
+    {
+      "command": "node .cursor/local/bin/cursor-chat-logger.mjs postToolUse"
+    }
+  ],
+  "postToolUseFailure": [
+    {
+      "command": "node .cursor/local/bin/cursor-chat-logger.mjs postToolUseFailure"
+    }
+  ],
+  "beforeShellExecution": [
+    {
+      "command": "node .cursor/local/bin/cursor-chat-logger.mjs beforeShellExecution"
+    }
+  ],
+  "afterShellExecution": [
+    {
+      "command": "node .cursor/local/bin/cursor-chat-logger.mjs afterShellExecution"
+    }
+  ]
+}
