@@ -1,0 +1,12 @@
+---
+description: Place temporary docs (plans, reviews) in project tmp/
+alwaysApply: true
+---
+
+# Plans and temporary docs in project tmp/
+
+**Always place temporary documents** (assessment plans, review reports, implementation checklists, and similar working docs) in the **project `tmp/` directory** at the repository root, not in `docs/` and not in the system `/tmp`.
+
+- **Use:** `tmp/<descriptive-name>.md` (e.g. `tmp/agenius-intranet-balances-widgets-review-plan.md`).
+- **Do not** use the system `/tmp` path for these files so they remain visible in the workspace and under the project.
+- **Do not** put temporary or plan-only documents in `docs/`; keep `docs/` for committed, long-lived documentation.
