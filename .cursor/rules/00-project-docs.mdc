@@ -12,4 +12,6 @@ When adopting the project or working in unfamiliar areas, load context in this o
 4. Relevant navigation docs in **docs/ai** (architecture-map, workflow, domain-map, coding-rules)
 5. Referenced documents in **docs/** as needed
 
+Domain- or feature-specific adoption notes live in **docs/ai/AGENT_ADOPTION.md** and linked runbooks under **docs/** — not in `.cursor` rules. See **.cursor/context/project-docs-contract.md**.
+
 Do not scan the repository randomly before reading docs/ai. The contract is in **.cursor/context/project-docs-contract.md**.
