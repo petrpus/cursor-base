@@ -2,7 +2,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import os from "node:os";
+import crypto from "node:crypto";
 
 const hookEventName = process.argv[2] ?? "unknown";
 
@@ -76,6 +76,10 @@ function pickFirst(...values) {
   return null;
 }
 
+function stableHash(value) {
+  return crypto.createHash("sha1").update(String(value)).digest("hex").slice(0, 12);
+}
+
 function asArray(value) {
   if (Array.isArray(value)) return value;
   if (value === undefined || value === null) return [];
@@ -121,21 +125,46 @@ function writeFile(filePath, content) {
 }
 
 function extractSessionId(payload) {
-  return String(
-    pickFirst(
-      payload.sessionId,
-      payload.session_id,
-      payload.chatId,
-      payload.chat_id,
-      payload.conversationId,
-      payload.conversation_id,
-      payload.context?.sessionId,
-      payload.context?.chatId,
-      payload.metadata?.sessionId,
-      payload.metadata?.chatId,
-      payload.id
-    ) ?? `unknown-session-${Date.now()}`
+  const explicit = pickFirst(
+    payload.sessionId,
+    payload.session_id,
+    payload.chatId,
+    payload.chat_id,
+    payload.conversationId,
+    payload.conversation_id,
+    payload.threadId,
+    payload.thread_id,
+    payload.runId,
+    payload.run_id,
+    payload.requestId,
+    payload.request_id,
+    payload.context?.sessionId,
+    payload.context?.chatId,
+    payload.context?.conversationId,
+    payload.context?.threadId,
+    payload.metadata?.sessionId,
+    payload.metadata?.chatId,
+    payload.metadata?.conversationId,
+    payload.metadata?.threadId,
+    payload.metadata?.runId,
+    payload.metadata?.requestId,
+    process.env.CURSOR_SESSION_ID,
+    process.env.CURSOR_CHAT_ID,
+    process.env.CURSOR_CONVERSATION_ID
   );
+  if (explicit) return String(explicit);
+
+  const fingerprint = pickFirst(
+    payload.chatTitle,
+    payload.sessionTitle,
+    payload.conversationTitle,
+    payload.prompt,
+    payload.userPrompt,
+    payload.message,
+    process.env.PWD,
+    process.cwd()
+  );
+  return `unknown-session-${stableHash(`${process.ppid}:${fingerprint ?? "na"}`)}`;
 }
 
 function extractChatTitle(payload) {
@@ -402,6 +431,98 @@ function extractRetry(payload) {
   };
 }
 
+function extractVerification(payload) {
+  const checksRaw = asArray(
+    pickFirst(
+      payload.verification?.checks,
+      payload.verificationChecks,
+      payload.verification_checks,
+      payload.checks,
+      payload.checkResults,
+      payload.check_results,
+      []
+    )
+  );
+
+  const checks = checksRaw
+    .map((check) => {
+      if (typeof check === "string") {
+        return { name: check, status: "unknown", durationMs: null };
+      }
+      if (!check || typeof check !== "object") return null;
+      return {
+        name: pickFirst(check.name, check.check, check.id, null),
+        status: pickFirst(check.status, check.result, check.outcome, "unknown"),
+        durationMs: pickFirst(check.durationMs, check.duration_ms, null)
+      };
+    })
+    .filter((check) => check?.name);
+
+  const passed = checks.filter((check) => String(check.status).toLowerCase() === "passed").map((check) => check.name);
+  const failed = checks.filter((check) => String(check.status).toLowerCase() === "failed").map((check) => check.name);
+  const skipped = checks.filter((check) => String(check.status).toLowerCase() === "skipped").map((check) => check.name);
+
+  return {
+    checks,
+    passed,
+    failed,
+    skipped
+  };
+}
+
+function extractDelegation(payload) {
+  const reason = pickFirst(
+    payload.delegationReason,
+    payload.delegation_reason,
+    payload.delegateReason,
+    payload.delegate_reason,
+    payload.reason,
+    payload.why,
+    null
+  );
+
+  const expectedOutcome = pickFirst(
+    payload.delegationExpectedOutcome,
+    payload.delegation_expected_outcome,
+    payload.expectedOutcome,
+    payload.expected_outcome,
+    null
+  );
+
+  const result = pickFirst(
+    payload.delegationResult,
+    payload.delegation_result,
+    payload.delegateResult,
+    payload.delegate_result,
+    payload.finalOutcome,
+    payload.final_outcome,
+    payload.outcome,
+    null
+  );
+
+  const successRaw = pickFirst(
+    payload.delegationSuccess,
+    payload.delegation_success,
+    payload.delegateSuccess,
+    payload.delegate_success,
+    null
+  );
+
+  const success =
+    typeof successRaw === "boolean"
+      ? successRaw
+      : typeof successRaw === "string"
+        ? ["true", "1", "yes", "success", "succeeded", "passed"].includes(successRaw.toLowerCase())
+        : null;
+
+  return {
+    reason,
+    expectedOutcome,
+    result,
+    success
+  };
+}
+
 function extractPlanStep(payload) {
   const index = pickFirst(
     payload.planStep?.index,
@@ -529,7 +650,8 @@ function getIndexPath(indexDir, sessionId) {
 }
 
 function findExistingSessionFiles(machineDir, sessionId) {
-  const suffixJsonl = `_${sessionId}.jsonl`;
+  const safeSessionId = slugify(sessionId, "unknown-session");
+  const suffixJsonl = `_${safeSessionId}.jsonl`;
   const entries = fs.readdirSync(machineDir, { withFileTypes: true });
 
   for (const entry of entries) {
@@ -538,7 +660,7 @@ function findExistingSessionFiles(machineDir, sessionId) {
       const prefix = entry.name.slice(0, -suffixJsonl.length);
       return {
         jsonlPath: path.join(machineDir, entry.name),
-        summaryPath: path.join(machineDir, `${prefix}_${sessionId}.summary.json`)
+        summaryPath: path.join(machineDir, `${prefix}_${safeSessionId}.summary.json`)
       };
     }
   }
@@ -575,7 +697,15 @@ function loadOrCreateSessionMeta(paths, sessionId, chatTitle, now) {
   }
 
   const existingFiles = findExistingSessionFiles(paths.machineDir, sessionId);
-  if (existingFiles && existingMeta) return existingMeta;
+  if (existingFiles && existingMeta) {
+    const mergedMeta = {
+      ...existingMeta,
+      jsonlPath: existingFiles.jsonlPath,
+      summaryPath: existingFiles.summaryPath
+    };
+    writeFile(indexPath, JSON.stringify(mergedMeta, null, 2));
+    return mergedMeta;
+  }
 
   const meta = createSessionFiles(paths, sessionId, chatTitle, now);
   writeFile(indexPath, JSON.stringify(meta, null, 2));
@@ -626,6 +756,12 @@ function initSummaryIfNeeded(summaryPath, sessionId, chatTitle, now) {
       delegations: 0,
       toolCalls: 0,
       retries: 0,
+      verificationChecks: 0,
+      verificationPassed: 0,
+      verificationFailed: 0,
+      verificationSkipped: 0,
+      delegationsSuccessful: 0,
+      delegationsFailed: 0,
       tokens: {
         input: 0,
         output: 0,
@@ -685,8 +821,14 @@ function updateSummary(summaryPath, event) {
       summary.delegationGraph.push({
         from: event.agent ?? "unknown",
         to: event.delegate,
-        count: 1
+        count: 1,
+        successful: event.delegation.success === true ? 1 : 0,
+        failed: event.delegation.success === false ? 1 : 0
       });
+    }
+    if (existing) {
+      if (event.delegation.success === true) existing.successful = (existing.successful ?? 0) + 1;
+      if (event.delegation.success === false) existing.failed = (existing.failed ?? 0) + 1;
     }
   }
 
@@ -700,6 +842,12 @@ function updateSummary(summaryPath, event) {
   }
 
   summary.totals.retries += Number(event.retry?.count ?? 0);
+  summary.totals.verificationChecks += event.verification.checks.length;
+  summary.totals.verificationPassed += event.verification.passed.length;
+  summary.totals.verificationFailed += event.verification.failed.length;
+  summary.totals.verificationSkipped += event.verification.skipped.length;
+  if (event.delegate && event.delegation.success === true) summary.totals.delegationsSuccessful += 1;
+  if (event.delegate && event.delegation.success === false) summary.totals.delegationsFailed += 1;
 
   summary.totals.tokens.input += Number(event.tokens.input ?? 0);
   summary.totals.tokens.output += Number(event.tokens.output ?? 0);
@@ -746,7 +894,9 @@ function refreshHumanHeader(humanPath, summaryPath) {
 ## Summary
 - Total duration: ${formatDuration(summary.totals.durationMs)}
 - Delegations: ${summary.totals.delegations}
+- Delegation success: ${summary.totals.delegationsSuccessful} success / ${summary.totals.delegationsFailed} failed
 - Retries: ${summary.totals.retries}
+- Verification checks: ${summary.totals.verificationChecks} total (${summary.totals.verificationPassed} passed / ${summary.totals.verificationFailed} failed / ${summary.totals.verificationSkipped} skipped)
 - Models used: ${summary.modelsUsed.length ? summary.modelsUsed.join(", ") : "n/a"}
 - Tokens: input ${summary.totals.tokens.input} / output ${summary.totals.tokens.output} / cached ${summary.totals.tokens.cached}
 - Cost: ${typeof summary.totals.costUsd === "number" ? `$${summary.totals.costUsd.toFixed(6)}` : "unavailable"}
@@ -771,6 +921,9 @@ function appendHumanTimeline(humanPath, event) {
   if (event.delegate) lines.push(`- Delegate: ${event.delegate}`);
   if (event.delegationDepth !== null) lines.push(`- Delegation depth: ${event.delegationDepth}`);
   if (event.reason) lines.push(`- Reason: ${event.reason}`);
+  if (event.delegation.expectedOutcome) lines.push(`- Delegation expected outcome: ${event.delegation.expectedOutcome}`);
+  if (event.delegation.result) lines.push(`- Delegation result: ${event.delegation.result}`);
+  if (event.delegation.success !== null) lines.push(`- Delegation success: ${event.delegation.success ? "yes" : "no"}`);
   if (event.model) lines.push(`- Model: ${event.model}`);
 
   const tokenLine = `- Tokens: input ${event.tokens.input ?? "n/a"} / output ${event.tokens.output ?? "n/a"} / cached ${event.tokens.cached ?? "n/a"}`;
@@ -793,6 +946,16 @@ function appendHumanTimeline(humanPath, event) {
     lines.push(
       `- Retry: count ${event.retry.count}, attempt ${event.retry.attempt}${event.retry.reason ? `, reason ${event.retry.reason}` : ""}`
     );
+  }
+
+  if (event.verification.checks.length) {
+    lines.push("");
+    lines.push("Verification:");
+    for (const check of event.verification.checks) {
+      lines.push(
+        `- ${check.name}: ${check.status}${check.durationMs !== null ? ` (${check.durationMs}ms)` : ""}`
+      );
+    }
   }
 
   if (event.commands.length) {
@@ -856,6 +1019,8 @@ function buildEvent(payload, now) {
   const files = extractFiles(payload);
   const commands = extractCommands(payload);
   const retry = extractRetry(payload);
+  const verification = extractVerification(payload);
+  const delegation = extractDelegation(payload);
   const planStep = extractPlanStep(payload);
   const { status, finalOutcome } = computeStatusAndOutcome(payload, hookEventName);
 
@@ -879,7 +1044,7 @@ function buildEvent(payload, now) {
     delegate,
     delegationDepth: pickFirst(payload.delegationDepth, payload.delegation_depth, delegate ? 1 : null),
     task: pickFirst(payload.task, payload.prompt, payload.userPrompt, null),
-    reason: pickFirst(payload.reason, payload.why, null),
+    reason: delegation.reason,
     status,
     finalOutcome,
     durationMs: pickFirst(payload.durationMs, payload.duration_ms, null),
@@ -894,6 +1059,8 @@ function buildEvent(payload, now) {
     filesDeleted: files.deleted,
     commands,
     retry,
+    verification,
+    delegation,
     planStep,
     resultSummary: summarizeResult(payload),
     riskFlags,

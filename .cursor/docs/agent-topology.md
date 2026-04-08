@@ -14,6 +14,9 @@ Delegation becomes much more consistent when all three are present:
 2. file-pattern triggers
 3. commands that name the required specialists
 
+For teams that want delegation "in the DNA", add a fourth lever:
+4. mandatory post-task delegation reporting (who/why/outcome/checks)
+
 ## Custom subagents in this kit
 - orchestrator
 - implementation-agent

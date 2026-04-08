@@ -33,3 +33,16 @@ For any non-trivial task, the built-in Agent must act as an orchestrator first a
 - do not let a UI system change bypass design-system review
 - do not let a route, auth, upload, or permission change bypass security review
 - do not let a schema or migration change bypass database review
+
+## Delegation reporting (mandatory for non-trivial tasks)
+Before final delivery, include a short "Delegation report" section with:
+- why delegation was required for this task
+- which specialist(s) were called and for what scope
+- what each specialist recommended
+- whether recommendations were applied (and why/why not)
+- verification checks run after implementation and their outcome
+
+If any matching specialist was intentionally not called, explicitly state:
+- the skipped specialist name
+- concrete reason for skipping
+- risk accepted by skipping
