@@ -1,6 +1,6 @@
 # Pre-commit: verify, docs, and commit
 
-Run this command to verify changes, update documentation, and create clean commit(s).
+Run this command to verify changes, update documentation, and prepare/apply clean commit(s) based on execution mode.
 
 ## What you will do
 
@@ -16,15 +16,19 @@ Run this command to verify changes, update documentation, and create clean commi
      - Comments and docstrings where they affect understanding of the recent changes.
    - Apply any doc edits the docs-agent recommends (or that you agree with) so the docs are accurate and complete.
 
-3. **Stage and commit**
-   - Stage **all** changes (verification fixes, doc updates, and original edits).
-   - If changes fall into **logically or functionally separate** groups, create **multiple commits** (e.g. one for feature/fix, one for docs, one for tests). Otherwise a single commit is fine.
-   - Use the **commit-agent** subagent to propose **commit boundaries and messages** based on the staged changes, then create the commit(s) accordingly (amend or split if the agent suggests it).
-   - If the commit-agent is not used, write clear, conventional commit messages yourself.
+3. **Prepare commit boundaries and messages**
+   - Inspect all changes (verification fixes, doc updates, and original edits).
+   - If changes fall into **logically or functionally separate** groups, propose **multiple commits** (e.g. one for feature/fix, one for docs, one for tests). Otherwise propose a single commit.
+   - Use the **commit-agent** subagent to propose **commit boundaries and messages**.
+   - If the commit-agent is not used, propose clear, conventional commit messages yourself.
+
+4. **Apply commits only when mode allows**
+   - **Interactive mode (default):** do not run `git add`/`git commit`; present proposed commit plan for user approval and application.
+   - **Autonomous cloud mode with explicit environment policy requiring commit/push:** apply staging/commit/push according to that policy.
 
 ## Execution rules
 
-- Run steps in order: (1) verify and green tests → (2) docs → (3) stage and commit.
-- Do not skip the change-verifier or the docs review; only proceed to commit once verification passes and docs are updated.
+- Run steps in order: (1) verify and green tests → (2) docs → (3) commit planning → (4) apply only when allowed by mode/policy.
+- Do not skip the change-verifier or the docs review; only proceed to commit planning once verification passes and docs are updated.
 - Prefer using the subagents (change-verifier, testing-agent, docs-agent, commit-agent) via the task tool with concrete prompts; invoke testing-agent when test-related work is needed.
 - Keep the command self-contained: the agent should not ask for extra confirmation unless something is ambiguous or risky (e.g. force-push or destructive git operations).

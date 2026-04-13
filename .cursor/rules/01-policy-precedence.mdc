@@ -1,0 +1,17 @@
+---
+description: Policy precedence and conflict resolution
+alwaysApply: true
+---
+
+When instructions conflict, apply this precedence order (highest wins):
+
+1. user instruction for this session
+2. system/environment constraints
+3. repository `alwaysApply` rules
+4. task-specific applied rules
+5. command playbooks
+6. agent-local guidance
+
+If two rules at the same precedence conflict, follow the stricter safety constraint and report the conflict in the final summary.
+
+If a command playbook conflicts with policy at higher precedence, rewrite command execution to remain compliant instead of skipping policy.

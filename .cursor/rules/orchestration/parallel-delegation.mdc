@@ -1,0 +1,14 @@
+---
+description: Parallel delegation guardrails
+alwaysApply: true
+---
+
+For non-trivial tasks, parallel specialist delegation is preferred when it reduces cycle time without harming quality.
+
+## Required guardrails
+
+1. Parallelize only independent specialties with non-overlapping write ownership in the same batch.
+2. Prefer review/findings phases in parallel; converge to a single implementation writer by default.
+3. Resolve security-sensitive recommendation conflicts before implementation proceeds.
+4. Do not exceed the declared budget envelope (token/cost/time) without explicit rationale in closeout.
+5. If unresolved high-severity conflict remains after synthesis, halt and report instead of forcing implementation.

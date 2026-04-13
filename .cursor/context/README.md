@@ -21,5 +21,7 @@ Project-specific context lives in **docs/ai** and **docs/**. See **project-docs-
 | **testing-strategy.md** | Verification layers (unit/integration/e2e) and minimum expectations. | Yes |
 | **frontend-guidelines.md** | Generic frontend expectations and agent split (design-system vs frontend-arch vs UX). | Yes |
 | **domain-rules.md** | When to use the Domain Agent — **generic triggers only**; project-specific domain areas are in docs/ai. | Yes (must stay generic) |
+| **model-governance.md** | Agent model-tier policy, escalation rules, and budget controls. | Yes |
+| **delegation-metrics.md** | Delegation ledger and governance scorecard schema for measurable efficiency/quality. | Yes |
 
 If you add a new file here, it must be universal. Otherwise, add the content to **docs/ai/** (and **docs/** if it’s deep reference).

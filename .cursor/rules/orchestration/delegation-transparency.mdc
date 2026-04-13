@@ -1,0 +1,24 @@
+---
+description: Delegation transparency and closeout reporting
+alwaysApply: true
+---
+
+For non-trivial tasks, final responses must include a structured closeout with delegation transparency.
+
+## Required closeout sections
+- task summary (`task_id`, risk tier, change type, acceptance criteria status)
+- delegation ledger (who was delegated, why, outcome used/rejected)
+- skipped specialist rationale (and compensating controls)
+- conflicts and resolution decisions
+- verification evidence and final verifier status
+- residual risk statement
+- tokens/cost/time summary when available
+- follow-up items
+
+## Delegation discipline
+- do not delegate only for optics; every delegation must have expected value
+- when a required specialist is skipped, explicitly explain why and what replaced that control
+- for high-risk tasks, unresolved specialist conflicts must block finalization
+
+## Artifact placement
+- temporary governance artifacts, plans, and working notes must be kept under `tmp/`

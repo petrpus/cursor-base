@@ -15,3 +15,9 @@ When adopting the project or working in unfamiliar areas, load context in this o
 Domain- or feature-specific adoption notes live in **docs/ai/AGENT_ADOPTION.md** and linked runbooks under **docs/** — not in `.cursor` rules. See **.cursor/context/project-docs-contract.md**.
 
 Do not scan the repository randomly before reading docs/ai. The contract is in **.cursor/context/project-docs-contract.md**.
+
+If `docs/ai` entry files are missing, use a bounded fallback:
+1. Read **.cursor/context/project-docs-contract.md** and relevant universal context files.
+2. Read root README and task-referenced docs/files.
+3. Inspect only narrowly targeted code paths implied by the task.
+4. Record adoption gaps in `tmp/`.
