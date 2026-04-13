@@ -159,43 +159,391 @@ Add `.cursor/rules/orchestration/parallel-delegation.mdc`:
 
 ---
 
-## 6) Skills (or playbooks) extension
+## 6) Skills deep dive: architecture, assignment, and operating model
 
-Introduce a reusable library under either:
+This section is intentionally detailed. It is the core mechanism for making existing agents faster, more predictable, and higher quality.
 
-- `.cursor/skills/` (if you want direct skill terminology), or
-- `.cursor/playbooks/` (to avoid confusion with platform-native “Skills”).
+## 6.1 Why skills are the leverage point
 
-Each skill/playbook should define:
+Current agent capability is broad, but efficiency varies because execution is prompt-dependent.  
+Skills convert ad hoc reasoning into reusable operating units with:
 
-- trigger conditions,
-- required inputs,
-- expected output schema,
-- quality checklist,
-- anti-patterns,
-- recommended model tier.
+- deterministic triggers,
+- fixed input/output contracts,
+- explicit quality checks,
+- model-tier guidance,
+- measurable outcomes.
 
-### Priority initial skills/playbooks
+Practical impact:
 
-1. risk-triage
-2. delegation-planning
-3. verification-orchestration
-4. security-review
-5. schema-migration-safety
-6. api-contract-compatibility
-7. ui-governance-audit
-8. docs-sync
-9. cost-governance
-10. post-task-retrospective
+- less repeated planning text,
+- lower delegation ambiguity,
+- better cross-agent consistency,
+- easier verification and governance scoring.
 
-### Standard output schema
+## 6.2 Canonical structure and naming
 
-- `assumptions`
-- `evidence_used`
+Use `.cursor/skills/` as canonical location (or `.cursor/playbooks/` if naming separation is preferred).  
+Recommended naming:
+
+`<domain>-<action>-skill.md`
+
+Examples:
+
+- `risk-triage-skill.md`
+- `delegation-planning-skill.md`
+- `security-review-skill.md`
+- `schema-migration-safety-skill.md`
+
+Each skill should include frontmatter:
+
+- `name`
+- `description`
+- `owner_agent`
+- `secondary_agents`
+- `default_model_tier`
+- `allowed_risk_tiers`
+- `required_inputs`
+- `required_outputs`
+- `version`
+
+## 6.3 Skill definition contract (required sections)
+
+Every skill file should contain these sections:
+
+1. **Intent**
+   - what decision/problem this skill solves.
+2. **When to invoke**
+   - trigger conditions (file patterns, task intent, risk tier).
+3. **When not to invoke**
+   - skip rules to avoid unnecessary cost.
+4. **Inputs required**
+   - task context, file list, constraints, risk tier, acceptance criteria.
+5. **Procedure**
+   - ordered execution steps.
+6. **Output contract**
+   - strict schema for downstream automation.
+7. **Quality checklist**
+   - objective pass criteria.
+8. **Anti-patterns**
+   - common failure modes.
+9. **Model guidance**
+   - default tier and escalation path.
+10. **Telemetry tags**
+   - tags to emit for scorecards.
+
+## 6.4 Universal skill input contract
+
+Main agent should pass this normalized payload to each skill invocation:
+
+- `task_id`
+- `task_title`
+- `risk_tier` (L1-L4)
+- `change_type` (ui/api/security/data/domain/docs/infra/mixed)
+- `acceptance_criteria[]`
+- `touched_files[]` (or expected scope)
+- `constraints[]` (policy/stack/perf/security)
+- `budget_envelope`:
+  - `token_soft_limit`
+  - `cost_soft_limit`
+  - `latency_target`
+- `known_uncertainties[]`
+- `required_evidence_level` (light/standard/strict)
+
+Why this matters: every downstream specialist receives comparable context, reducing re-questioning and noisy token spend.
+
+## 6.5 Universal skill output contract
+
+All skills should return machine-readable sections (markdown + structured block):
+
+- `summary`
+- `assumptions[]`
+- `evidence_used[]`
+- `findings[]`
 - `decision`
-- `risks`
-- `follow_ups`
-- `effort_impact` (qualitative)
+- `recommendations[]`
+- `risks[]` (with severity)
+- `residual_risk`
+- `follow_ups[]`
+- `verification_needs[]`
+- `budget_impact`:
+  - `token_estimate`
+  - `latency_impact`
+  - `cost_impact`
+- `confidence` (low/medium/high)
+
+This enables the orchestrator, change-verifier, and compliance-verifier to evaluate outputs consistently.
+
+## 6.6 Skill families and mandatory core set
+
+Define skills in 5 families:
+
+1. **Planning and control**
+   - risk-triage
+   - delegation-planning
+   - conflict-resolution
+   - budget-governance
+
+2. **Engineering quality**
+   - verification-orchestration
+   - regression-risk-assessment
+   - refactor-safety
+
+3. **Security and compliance**
+   - security-review
+   - data-exposure-check
+   - compliance-gate-evaluation
+   - exception-waiver-recording
+
+4. **Data and contracts**
+   - schema-migration-safety
+   - api-contract-compatibility
+   - transaction-integrity-check
+
+5. **UX and documentation quality**
+   - ui-governance-audit
+   - accessibility-flow-check
+   - docs-sync
+   - change-closeout-reporting
+
+## 6.7 Agent-to-skill ownership matrix
+
+Primary ownership (P) and supporting role (S):
+
+| Skill | Orchestrator | Implementation | Change Verifier | Compliance Verifier | Security | Testing | Database | API Contract | Frontend Arch | Design System | UX/A11y | Docs | Log Analyst |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| risk-triage | P | S | S | S | S | S | S | S | S | S | S | S |  |
+| delegation-planning | P | S |  | S | S | S | S | S | S | S | S | S |  |
+| conflict-resolution | P | S | S | P | S | S | S | S | S | S | S | S |  |
+| budget-governance | P | S |  | S |  |  |  |  |  |  |  |  | P |
+| verification-orchestration | S | S | P | S | S | P | S | S | S | S | S |  |  |
+| regression-risk-assessment | S | S | P |  | S | P | S | S | S | S | S |  |  |
+| security-review | S |  | S | S | P |  | S | S |  |  |  |  |  |
+| compliance-gate-evaluation | S |  | S | P | S |  | S | S |  |  |  |  |  |
+| schema-migration-safety | S |  | S | S | S | S | P | S |  |  |  |  |  |
+| api-contract-compatibility | S |  | S | S | S | S | S | P |  |  |  |  |  |
+| ui-governance-audit | S |  | S |  |  | S |  |  | P | P | P |  |  |
+| accessibility-flow-check | S |  | S |  |  | S |  |  | S | S | P |  |  |
+| docs-sync | S |  |  | S |  |  |  |  |  |  |  | P |  |
+| change-closeout-reporting | P |  | S | S |  |  |  |  |  |  |  | P | S |
+
+Policy: every non-trivial task should map to at least one Planning skill + one domain skill + one closeout skill.
+
+## 6.8 Mandatory skill bundles by risk tier
+
+### L1 (low)
+
+Required:
+
+- risk-triage
+- delegation-planning (light mode)
+- change-closeout-reporting (compact)
+
+Optional:
+
+- docs-sync
+- regression-risk-assessment
+
+### L2 (moderate)
+
+Required:
+
+- risk-triage
+- delegation-planning
+- verification-orchestration
+- regression-risk-assessment
+- change-closeout-reporting
+
+Conditional:
+
+- ui-governance-audit (if UI surface touched)
+- api-contract-compatibility (if API shape touched)
+
+### L3 (high)
+
+Required:
+
+- all L2 required skills
+- security-review
+- compliance-gate-evaluation
+- one of:
+  - schema-migration-safety (data/migration path)
+  - api-contract-compatibility (contract path)
+  - ui-governance-audit + accessibility-flow-check (user-critical UI path)
+
+### L4 (critical)
+
+Required:
+
+- all L3 required skills
+- exception-waiver-recording (if any gate deviation)
+- budget-governance (strict mode)
+- change-closeout-reporting (strict mode)
+
+And mandatory human approval checkpoint for residual risk acceptance.
+
+## 6.9 Mandatory skill bundles by change type
+
+Risk tier is primary; change-type bundle adds mandatory overlays:
+
+- **Security-sensitive route/auth/upload/session**
+  - security-review
+  - compliance-gate-evaluation
+  - verification-orchestration
+
+- **Database schema/migrations**
+  - schema-migration-safety
+  - transaction-integrity-check
+  - regression-risk-assessment
+
+- **API schema/DTO/validation**
+  - api-contract-compatibility
+  - security-review
+  - verification-orchestration
+
+- **Shared UI/design system**
+  - ui-governance-audit
+  - accessibility-flow-check
+  - docs-sync (if reusable conventions changed)
+
+- **Docs/process/policy changes**
+  - docs-sync
+  - compliance-gate-evaluation
+  - change-closeout-reporting
+
+## 6.10 Skill invocation protocol (orchestrator algorithm)
+
+For non-trivial tasks:
+
+1. run `risk-triage-skill`,
+2. run `delegation-planning-skill`,
+3. generate skill bundle = required(risk tier) + required(change type),
+4. split bundle into parallel-safe and serial groups,
+5. execute read/review skills first,
+6. synthesize findings and resolve conflicts,
+7. run implementation,
+8. run `verification-orchestration-skill`,
+9. run change-verifier and (if needed) compliance-verifier,
+10. run `change-closeout-reporting-skill`.
+
+Stop conditions:
+
+- unresolved high-severity conflict,
+- required skill output missing,
+- budget exhausted without acceptable confidence,
+- L4 approval missing.
+
+## 6.11 Skill-level model and budget policy
+
+Each skill declares:
+
+- default model tier (A/B/C),
+- max allowed tier without explicit escalation reason,
+- expected token range (light/standard/strict modes).
+
+Example policy:
+
+- `risk-triage`: Tier A default, Tier B for ambiguous mixed-scope tasks.
+- `delegation-planning`: Tier B default.
+- `security-review`: Tier B for L2; Tier C for L3/L4.
+- `schema-migration-safety`: Tier B default; Tier C when destructive migration risk exists.
+- `change-closeout-reporting`: Tier A default.
+
+If a skill exceeds its token soft limit, it must emit:
+
+- cause,
+- whether escalation is necessary,
+- lower-cost fallback path.
+
+## 6.12 Skill quality controls and acceptance criteria
+
+A skill definition is production-ready only when it passes:
+
+1. **Clarity test**: another agent can run it without extra explanation.
+2. **Determinism test**: same inputs produce materially similar outputs.
+3. **Utility test**: outputs are actually consumed by orchestrator/verifier.
+4. **Efficiency test**: lower rework or lower token burn vs baseline.
+5. **Governance test**: emits required telemetry tags and closeout fields.
+
+## 6.13 Skill telemetry and scorecard mapping
+
+Each skill must emit telemetry tags:
+
+- `skill_name`
+- `skill_version`
+- `skill_mode` (light/standard/strict)
+- `skill_outcome` (pass/warn/fail)
+- `skill_confidence`
+
+Scorecard should track per skill:
+
+- invocation count,
+- median token/cost,
+- contribution to verifier first-pass success,
+- association with retry reduction,
+- false-positive/low-value invocation rate.
+
+This creates a feedback loop: keep high-value skills, redesign noisy ones.
+
+## 6.14 Skills lifecycle governance
+
+Introduce lifecycle states:
+
+- `draft`
+- `trial`
+- `approved`
+- `deprecated`
+
+Promotion criteria:
+
+- at least N successful uses (set per repo scale),
+- stable output quality,
+- measurable efficiency gain or quality gain.
+
+Deprecation criteria:
+
+- low adoption,
+- high cost with low impact,
+- duplicated by better skill.
+
+## 6.15 First-wave implementation package (concrete)
+
+Create these first 12 skill files:
+
+1. `risk-triage-skill.md`
+2. `delegation-planning-skill.md`
+3. `verification-orchestration-skill.md`
+4. `regression-risk-assessment-skill.md`
+5. `security-review-skill.md`
+6. `compliance-gate-evaluation-skill.md`
+7. `schema-migration-safety-skill.md`
+8. `api-contract-compatibility-skill.md`
+9. `ui-governance-audit-skill.md`
+10. `accessibility-flow-check-skill.md`
+11. `docs-sync-skill.md`
+12. `change-closeout-reporting-skill.md`
+
+Then add 3 optional advanced skills in phase 2:
+
+13. `conflict-resolution-skill.md`
+14. `budget-governance-skill.md`
+15. `exception-waiver-recording-skill.md`
+
+## 6.16 Expected efficiency and quality gains from skills
+
+Efficiency gains (target direction):
+
+- lower planning token overhead via standardized inputs,
+- fewer redundant delegations,
+- fewer retry loops from missing specialist evidence,
+- faster closeout generation through fixed output schema.
+
+Quality gains (target direction):
+
+- more consistent risk identification,
+- higher specialist coverage where required,
+- stronger verifier evidence quality,
+- improved auditability and residual-risk clarity.
 
 ---
 
