@@ -55,7 +55,9 @@ This command does **not** run `cursor-kit` and does not modify shared symlinked 
    Add or update a short subsection: Cloud agent assumptions (compose file path, service names, which vars are in Secrets). Link to `.cursor/environment.json`.
 
 6. **Cross-link**  
-   Mention that **`/adopt-repo-docs`** should already have established `docs/ai/` entry points; if `dev-runtime.md` is missing, create it with **`docs-agent`** as part of this pass or point the user to **`/adopt-repo-docs`** first.
+   **`/adopt-cloud-env`** is **separate** from **`/adopt-repo-docs`** (docs/ai bootstrap). Users who do **not** use Cloud agents never need this command.
+   - If **`docs/ai/`** already exists from **`/adopt-repo-docs`**, align **`docs/ai/dev-runtime.md`** with this pass.
+   - If `dev-runtime.md` is missing and the user has **not** run **`/adopt-repo-docs`**, create a minimal **`docs/ai/dev-runtime.md`** with **`docs-agent`** here **or** suggest they run **`/adopt-repo-docs`** first for a fuller doc set.
 
 ## Example shape (illustrative — adapt to Cursor docs and your repo)
 

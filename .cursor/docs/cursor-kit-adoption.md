@@ -31,7 +31,7 @@ cursor-kit doctor --project .
 
 Prefer `npm run cursor-kit -- ...` from the `cursor-base` workspace during development.
 
-In **Cursor**, run **`/adopt-repo-docs`** to complete the `docs/ai` adoption set. For frontend repos, follow with **`/adopt-design-system`**. For **Cursor Cloud agents**, run **`/adopt-cloud-env`** to draft **`.cursor/environment.json`** (safe env literals + Secrets checklist).
+In **Cursor**, run **`/adopt-repo-docs`** to complete the `docs/ai` adoption set (skip if you do not use that flow). For frontend repos, follow with **`/adopt-design-system`**. **`/adopt-cloud-env`** is a **separate** optional step **only** for **Cursor Cloud agents** (`.cursor/environment.json` + Secrets checklist).
 
 ## Migration away from a whole `.cursor` symlink
 

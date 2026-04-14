@@ -11,8 +11,8 @@ Typical workflow (new repo)
   1. cursor-kit init-project --project <repo>
   2. cursor-kit link --shared <path-to-cursor-base> --project <repo>
   3. cursor-kit doctor --project <repo>
-  4. In Cursor: /adopt-repo-docs (and /adopt-design-system if you have a UI stack)
-  5. In Cursor: /adopt-cloud-env if you use Cloud agents (environment.json + Secrets checklist)
+  4. In Cursor: /adopt-repo-docs (and /adopt-design-system if you have a UI stack); skip docs step if you maintain docs/ai yourself
+  5. Optional: /adopt-cloud-env only if you use Cursor Cloud agents (separate from adopt-repo-docs)
 
 Shared toolkit path (--shared / CURSOR_BASE_DIR)
   Order of resolution when --shared is omitted:

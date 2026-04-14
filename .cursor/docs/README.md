@@ -24,6 +24,6 @@ Project-specific UI and runtime docs live in **docs/ai** so that `.cursor` can r
 
 Slash command **`/adopt-repo-docs`** (see `.cursor/commands/adopt-repo-docs.md`) bootstraps **`docs/ai/`** and **`AGENTS.md`** in **consumer** repos after `cursor-kit link`. UI-specific follow-up: **`/adopt-design-system`**.
 
-Slash command **`/adopt-cloud-env`** (see `.cursor/commands/adopt-cloud-env.md`) drafts **`.cursor/environment.json`** for **Cursor Cloud agents** with **safe hardcoded `env` values only**, and lists **Cursor Secrets** the user must configure for passwords and full URLs.
+Slash command **`/adopt-cloud-env`** (see `.cursor/commands/adopt-cloud-env.md`) is **optional** and **separate** from **`/adopt-repo-docs`**: it drafts **`.cursor/environment.json`** for **Cursor Cloud agents** with **safe hardcoded `env` values only**, and lists **Cursor Secrets** the user must configure for passwords and full URLs. Skip if you do not use Cloud agents.
 
 Previously project-specific content (ui-stack, design-system, ui-patterns, and full dev-runtime details) typically lives in **docs/ai** in **consumer application repositories** that adopt this kit. This `cursor-base` checkout may not include a full `docs/ai/` tree; when absent, treat `.cursor/docs/` plus any repo-local `docs/dev/` notes as the operational docs for the toolkit itself.

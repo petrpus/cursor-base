@@ -131,15 +131,15 @@ This command does **not** link shared content.
 
 **Completing `docs/ai`:** after `init-project` + `link` + `doctor`, open the project in **Cursor** and run the slash command **`/adopt-repo-docs`** (defined under `.cursor/commands/` in the linked toolkit). That drives agents to create the adoption set; use **`/adopt-design-system`** afterward for UI-focused repos.
 
-**Cursor Cloud agents:** run **`/adopt-cloud-env`** to draft **`.cursor/environment.json`** with **safe** `env` literals only and a **Cursor Secrets** checklist for credentials (see `.cursor/commands/adopt-cloud-env.md` in the linked toolkit).
+**Cursor Cloud agents (optional, separate):** only if you use them, run **`/adopt-cloud-env`** in Cursor to draft **`.cursor/environment.json`** (safe `env` literals) and a **Cursor Secrets** checklist — see `.cursor/commands/adopt-cloud-env.md`. This is **not** required for **`/adopt-repo-docs`**.
 
 ## End-to-end onboarding (consumer repo)
 
 1. `npm install` / `npm run build -w cursor-kit` in `cursor-base` (or install `cursor-kit` from that checkout).
 2. In the app repo: `cursor-kit init-project --project .` then `cursor-kit link --shared <cursor-base> --project .` (use `--dry-run` first if you want).
 3. `cursor-kit doctor --project .` — resolve **errors**.
-4. In Cursor: **`/adopt-repo-docs`** — then **`/adopt-design-system`** if you ship a UI.
-5. In Cursor: **`/adopt-cloud-env`** if you use Cloud agents with Docker or long-running dev infra.
+4. In Cursor: **`/adopt-repo-docs`** (optional if you maintain `docs/ai` yourself) — then **`/adopt-design-system`** if you ship a UI.
+5. In Cursor: **`/adopt-cloud-env`** only if you use **Cursor Cloud agents** and want `.cursor/environment.json` prepared.
 6. Commit tracked files; never commit secrets in `mcp.json` or `.cursor/environment.json`.
 
 ## Terminal output
