@@ -15,3 +15,6 @@ The docs-agent is suited to a **cheap/fast model** and can be run frequently (e.
 - Docs reflect current behavior and APIs.
 - New or changed surface area is documented; gaps are called out.
 - Links and structure support discoverability; snippets are copy-paste safe.
+
+This file is reference guidance. Enforceable routing for this domain lives in:
+`/workspace/.cursor/rules/documentation/docs-triggers.mdc`.

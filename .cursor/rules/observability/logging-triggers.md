@@ -1,5 +1,7 @@
 # Observability Triggers
 
+This file mirrors enforceable rule logic in `logging-triggers.mdc`.
+
 Use `observability-agent` whenever a task affects:
 - logging
 - audit trails

@@ -1,0 +1,22 @@
+---
+description: Security specialist trigger enforcement
+alwaysApply: false
+globs:
+  - "**/routes/**"
+  - "**/api/**"
+  - "**/*auth*"
+  - "**/*session*"
+  - "**/*permission*"
+  - "**/*upload*"
+  - "**/*secret*"
+  - "**/*token*"
+  - "**/*loader*"
+  - "**/*action*"
+  - "**/*handler*"
+---
+
+Security-sensitive surfaces require `security-agent` review before finalization.
+
+Enforce:
+- Include security findings in specialist summary.
+- Do not finalize with unresolved high-severity security findings.

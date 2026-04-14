@@ -1,0 +1,19 @@
+---
+description: Database specialist trigger enforcement
+alwaysApply: false
+globs:
+  - "**/schema.prisma"
+  - "**/prisma/migrations/**"
+  - "**/*.sql"
+  - "**/*prisma*.{ts,tsx,js,jsx}"
+  - "**/db/**"
+  - "**/database/**"
+---
+
+When these paths or patterns are touched, consult `database-agent` before finalization.
+
+Required for L2+:
+- database review summary present in task closeout
+- verification notes include database-sensitive checks where relevant
+
+Do not finalize schema/migration-sensitive work without database specialist evidence.

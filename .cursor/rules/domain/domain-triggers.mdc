@@ -1,0 +1,13 @@
+---
+description: Mandatory domain specialist routing for domain-critical logic
+alwaysApply: false
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+---
+
+Use `domain-agent` whenever a task affects business-critical rules, financial calculations, repayment logic, penalties, schedules, ledger behavior, or audit-sensitive domain decisions.
+
+When the domain agent is required by this scope and not consulted, the task must not be finalized as pass.

@@ -1,0 +1,24 @@
+---
+description: Enforce testing-agent routing for behavior changes
+alwaysApply: false
+globs:
+  - "**/*.{ts,tsx,js,jsx}"
+  - "**/routes/**"
+  - "**/features/**"
+  - "**/services/**"
+  - "**/workers/**"
+  - "**/jobs/**"
+---
+
+Use `testing-agent` for any task that changes behavior, fixes a bug, adds a feature, changes a form, changes a route, or affects database logic.
+
+## Required outcomes
+- identify the minimum required test coverage
+- add or propose unit, integration, or e2e tests as appropriate
+- call out untested risk explicitly if tests cannot be added
+
+## Enforcement
+- For L2+ tasks, behavior-sensitive changes cannot be finalized without testing-agent consultation or explicit compensating controls documented in closeout.
+- L3/L4 behavior changes without testing coverage rationale should fail verification.
+
+Do not treat implementation as complete merely because the code compiles.

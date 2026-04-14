@@ -1,5 +1,7 @@
 # Security Triggers
 
+Authoritative enforcement lives in `security-triggers.mdc`.
+
 Use `security-agent` before implementation or finalization whenever a task affects:
 - authentication
 - authorization

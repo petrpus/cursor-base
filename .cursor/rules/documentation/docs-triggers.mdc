@@ -1,0 +1,17 @@
+---
+description: Documentation specialist routing trigger
+alwaysApply: false
+globs:
+  - "docs/**"
+  - "docs/ai/**"
+  - ".cursor/docs/**"
+  - "**/README.md"
+  - "**/*.md"
+---
+
+When a task updates or reorganizes documentation, the agent must consult `docs-agent` before finalization.
+
+For non-trivial docs work, include:
+- documented scope,
+- consistency/interlinking checks,
+- follow-up doc gaps.

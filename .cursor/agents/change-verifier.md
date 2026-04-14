@@ -24,6 +24,7 @@ You validate whether the change is ready.
 - Apply `.cursor/rules/orchestration/risk-tiering.mdc` as the required matrix.
 - Fail when mandatory specialist routing or mandatory checks for the declared risk tier are missing.
 - If a required specialist was skipped, require documented compensating controls.
+- For L2+ tasks, fail if no required specialist review evidence is present.
 
 ## Evidence checklist
 - affected scope summary is explicit
@@ -31,6 +32,7 @@ You validate whether the change is ready.
 - verification commands and results are explicit
 - residual risk statement is explicit (or "none" with rationale)
 - budget/model policy deviations are disclosed when applicable
+- delegation ledger sections required by `delegation-transparency` rule are present
 
 ## Standard checks when relevant
 - typecheck

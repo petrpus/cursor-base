@@ -1,0 +1,22 @@
+---
+description: Enforce frontend specialist delegation for UI work
+alwaysApply: true
+globs:
+  - "**/*.{tsx,jsx,css,scss}"
+  - "**/components/**"
+  - "**/routes/**"
+  - "**/pages/**"
+---
+
+When frontend or UI surfaces are touched, delegate to matching frontend specialists before implementation for L2+ tasks:
+
+- page composition, forms, tables, admin UX -> `frontend-architecture-agent`
+- shared UI component APIs and reusable primitives -> `design-system-agent`
+- accessibility/responsive concerns -> `ux-accessibility-agent` or `responsive-accessibility-auditor`
+
+If shared UI or token conventions are changed, include:
+
+- `design-system-guardian` for governance updates
+- `design-token-auditor` when token/class normalization is involved
+
+Do not finalize L2+ UI work without a frontend specialist summary and verification coverage rationale.

@@ -1,5 +1,9 @@
 # Frontend Triggers
 
+This file documents frontend trigger intent. Enforceable behavior is defined in:
+- `.cursor/rules/frontend/frontend-triggers.mdc`
+- `.cursor/rules/orchestration/main-orchestration.mdc`
+
 When a task touches any of the following, the built-in Agent must consult frontend specialists before implementation:
 - route modules
 - pages

@@ -1,0 +1,16 @@
+---
+description: Enforced observability specialist routing
+alwaysApply: false
+globs:
+  - "**/*.{ts,tsx,js,jsx}"
+  - "**/*log*"
+  - "**/*trace*"
+  - "**/*metric*"
+  - "**/*audit*"
+  - "**/*job*"
+  - "**/*queue*"
+---
+
+If task intent or touched files indicate observability-sensitive scope (logging, tracing, auditability, metrics, retries, jobs), `observability-agent` is required for L2+ work.
+
+If task intent is primarily recurring-failure or churn analysis from logs, `log-analyst-agent` is required.

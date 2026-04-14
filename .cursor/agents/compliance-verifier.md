@@ -20,6 +20,7 @@ Check whether the task followed repository policy and enterprise workflow contro
 - required risk-tier gates completed (`.cursor/rules/orchestration/risk-tiering.mdc`)
 - delegation transparency sections included (`.cursor/rules/orchestration/delegation-transparency.mdc`)
 - specialist coverage for triggered areas
+- for L2+, verify at least one required specialist was actually used; for L3/L4, verify all required specialist classes were covered or waived with explicit compensating controls
 - commit policy conformance by execution mode
 - adoption rule conformance (including bounded fallback when docs/ai is missing)
 
