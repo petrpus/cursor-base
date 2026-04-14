@@ -27,8 +27,9 @@ Use this order so filesystem layout is correct before agents author **`docs/ai/`
 3. **Link shared toolkit:** `cursor-kit link --shared <path-to-cursor-base> --project <repo>` (again, `--dry-run` first is fine).
 4. **Validate:** `cursor-kit doctor --project <repo>` — fix any **errors** before continuing.
 5. **Complete `docs/ai` in Cursor:** open the project in Cursor and run the slash command **`/adopt-repo-docs`** (defined in `.cursor/commands/` once linked). That command drives agents to inspect the repo and create or refresh the adoption set (`docs/ai/README.md`, `AGENT_ADOPTION.md`, `source-of-truth.md`, navigation docs, `AGENTS.md`, optional design notes).
-6. **UI-heavy repos:** after `/adopt-repo-docs`, if you maintain a real frontend stack, follow with **`/adopt-design-system`** for `docs/ai/design-system.md`, `ui-stack.md`, and `ui-patterns.md`.
-7. **Commit** what you intend to track (often `AGENTS.md`, `docs/ai/**`, `.cursor/mcp.json`). Do not commit secrets.
+6. **Cursor Cloud agents:** run **`/adopt-cloud-env`** to draft **`.cursor/environment.json`** with only **non-secret** `env` values and to list **Cursor Secrets** you must set for credentials (see `.cursor/commands/adopt-cloud-env.md`).
+7. **UI-heavy repos:** after `/adopt-repo-docs`, if you maintain a real frontend stack, follow with **`/adopt-design-system`** for `docs/ai/design-system.md`, `ui-stack.md`, and `ui-patterns.md`.
+8. **Commit** what you intend to track (often `AGENTS.md`, `docs/ai/**`, `.cursor/mcp.json`). Do not commit secrets.
 
 `cursor-kit doctor` may **warn** when core `docs/ai` entry files are still missing after a successful **`link`** (manifest present); that reminder points you at **`/adopt-repo-docs`**.
 

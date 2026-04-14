@@ -33,6 +33,7 @@ This command is **not** a substitute for `cursor-kit`: it does not create symlin
 5. **Optional — ask the user first** if they want product/design capture:
    - If yes, add or refresh **`docs/DESIGN.md`** (or the single design doc path the team already uses) with goals, non-goals, and links into `docs/ai`.
 6. **If the repo has a real UI stack** (React/Vue/etc. in deps and app code), schedule follow-up **`/adopt-design-system`** to fill `docs/ai/design-system.md`, `ui-stack.md`, and `ui-patterns.md` — do not duplicate that command’s full workflow here; a single sentence + link is enough.
+7. **If the repo uses Cursor Cloud agents** with Docker or long-running dev infra, schedule follow-up **`/adopt-cloud-env`** to draft **`.cursor/environment.json`** (safe literals only) and a **Cursor Secrets** checklist — see `.cursor/commands/adopt-cloud-env.md`.
 
 ## Output (required)
 
