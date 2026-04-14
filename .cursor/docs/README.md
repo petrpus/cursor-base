@@ -22,4 +22,6 @@ Project-specific UI and runtime docs live in **docs/ai** so that `.cursor` can r
 | **README-ui-agent-integration.md** | UI subagents, commands, rules; recommended first run (generic). |
 | **cursor-kit-adoption.md** | How to adopt the split `.cursor` layout using the `cursor-kit` CLI (symlinked shared subtrees + local config). |
 
+Slash command **`/adopt-repo-docs`** (see `.cursor/commands/adopt-repo-docs.md`) bootstraps **`docs/ai/`** and **`AGENTS.md`** in **consumer** repos after `cursor-kit link`. UI-specific follow-up: **`/adopt-design-system`**.
+
 Previously project-specific content (ui-stack, design-system, ui-patterns, and full dev-runtime details) typically lives in **docs/ai** in **consumer application repositories** that adopt this kit. This `cursor-base` checkout may not include a full `docs/ai/` tree; when absent, treat `.cursor/docs/` plus any repo-local `docs/dev/` notes as the operational docs for the toolkit itself.

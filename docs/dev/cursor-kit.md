@@ -18,31 +18,88 @@ Portable copy (travels when `.cursor/docs` is symlinked): [`.cursor/docs/cursor-
   - `.cursor/hooks.json`
 - **Project knowledge** for agents belongs in **`docs/ai/`** and **`docs/`**, per the separation contract in `.cursor/context/project-docs-contract.md` (when that file is present in your linked toolkit).
 
-## Onboarding checklist
+## New or existing repo: full onboarding
 
-1. Ensure Node.js 20+ is available.
-2. In `cursor-base`, run `npm install` and `npm run build -w cursor-kit`.
-3. In your project:
-   - run `cursor-kit init-project --project <repo>` (dry-run first if you want)
-   - run `cursor-kit link --shared <cursor-base> --project <repo>` (add `--dry-run` first)
-4. Commit the real files you want tracked (often `AGENTS.md`, `docs/ai/*`, `.cursor/mcp.json`, …). Be careful not to commit secrets.
+Use this order so filesystem layout is correct before agents author **`docs/ai/`** content.
 
-## Migrating from `project/.cursor -> cursor-base/.cursor`
+1. **Toolchain:** Node.js 20+, `cursor-kit` installed or built from `cursor-base` (see package README).
+2. **Scaffold local Cursor files:** `cursor-kit init-project --project <repo>` (use `--dry-run` first if you prefer).
+3. **Link shared toolkit:** `cursor-kit link --shared <path-to-cursor-base> --project <repo>` (again, `--dry-run` first is fine).
+4. **Validate:** `cursor-kit doctor --project <repo>` — fix any **errors** before continuing.
+5. **Complete `docs/ai` in Cursor:** open the project in Cursor and run the slash command **`/adopt-repo-docs`** (defined in `.cursor/commands/` once linked). That command drives agents to inspect the repo and create or refresh the adoption set (`docs/ai/README.md`, `AGENT_ADOPTION.md`, `source-of-truth.md`, navigation docs, `AGENTS.md`, optional design notes).
+6. **UI-heavy repos:** after `/adopt-repo-docs`, if you maintain a real frontend stack, follow with **`/adopt-design-system`** for `docs/ai/design-system.md`, `ui-stack.md`, and `ui-patterns.md`.
+7. **Commit** what you intend to track (often `AGENTS.md`, `docs/ai/**`, `.cursor/mcp.json`). Do not commit secrets.
 
-If `.cursor` is currently a **single symlink** to the shared directory:
+`cursor-kit doctor` may **warn** when core `docs/ai` entry files are still missing after a successful **`link`** (manifest present); that reminder points you at **`/adopt-repo-docs`**.
 
-1. **Stop** using that model (it is easy to accidentally mutate the shared repo through the symlink).
-2. Back up any local-only files you created inside `.cursor` (for example `mcp.json`).
-3. Remove the symlink:
-   - `rm .cursor` (from the project root)
-4. Recreate a real directory and scaffold local files:
-   - `mkdir .cursor`
-   - run `cursor-kit init-project --project .`
-5. Re-apply shared links:
-   - `cursor-kit link --shared <path-to-cursor-base> --project .`
-6. Restore backed-up local files if needed.
+---
 
-`cursor-kit doctor` will flag a whole-directory `.cursor` symlink as an error and point you back to this migration path.
+## Legacy migration: whole `project/.cursor` was one symlink
+
+If `.cursor` is currently a **single symlink** to `cursor-base/.cursor` (or any other directory), **`cursor-kit link` will refuse** until you use a split layout. That avoids creating paths **through** the symlink into the canonical repo by mistake.
+
+### Before you start
+
+- Work from the **repository root** of the **consumer** project (the app repo), not from inside `cursor-base`.
+- In **monorepos**, run these steps from the package root that should own `.cursor/` (usually the repo root).
+- **Linux** is the primary target; other Unix-like systems usually behave the same. Windows paths are not the focus of this guide.
+- Optional preflight: `cursor-kit doctor --project .` — you should see a **split layout** error while `.cursor` is still a symlink.
+
+### 1. Back up and remove the old symlink
+
+1. Copy out any **repo-local** files you created under the old symlinked tree (for example `.cursor/mcp.json`, `.cursor/hooks.json`, custom scripts) to a safe place **outside** `.cursor`.
+2. **Rename** the symlink instead of deleting it outright (easy rollback):
+
+   ```bash
+   mv .cursor ".cursor.bak.$(date +%Y%m%d-%H%M%S)"
+   ```
+
+   Keep that backup until `link` and `doctor` succeed.
+
+### 2. Create a real `.cursor` directory
+
+```bash
+mkdir .cursor
+```
+
+### 3. Scaffold and link
+
+```bash
+cursor-kit init-project --project .
+cursor-kit link --shared /absolute/path/to/cursor-base --project .
+```
+
+Use `--dry-run` on each command first if you want a preview.
+
+### 4. Restore local-only files
+
+Copy your backed-up **`mcp.json`**, **`hooks.json`**, **`environment.json`**, or other **non-symlink** config into `.cursor/` as normal files. Do not replace managed symlink entries (`agents`, `rules`, …) with copies of the shared tree.
+
+### 5. Verify
+
+```bash
+cursor-kit doctor --project .
+```
+
+- Expect **no errors** for split layout, shared source, and symlinks.
+- In **`cursor-base`**, run `git status` and confirm you did **not** accidentally modify the shared checkout while the old symlink existed or during migration.
+
+### 6. Remove the backup when satisfied
+
+When everything works:
+
+```bash
+rm -rf ".cursor.bak.<timestamp>"
+```
+
+(or keep the backup outside the repo).
+
+### Edge cases and notes
+
+- **CI / headless:** `doctor` and discovery rely on the filesystem only; avoid relying on `$HOME`-based auto-detection in CI—pass **`--shared`** explicitly.
+- **`unlink` does not migrate** a whole-directory `.cursor` symlink: it only removes symlinks listed in `.cursor/.cursor-kit-managed.json`. Migration is always: break root symlink → real dir → `init-project` → `link`.
+
+---
 
 ## Environment variables
 

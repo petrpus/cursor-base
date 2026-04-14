@@ -150,6 +150,21 @@ export async function runDoctor(input: DoctorInput): Promise<DoctorResult> {
     }
   }
 
+  if (manifest) {
+    const docsAiCore = ["README.md", "AGENT_ADOPTION.md", "source-of-truth.md"] as const;
+    const docsAiDir = join(input.projectRoot, "docs", "ai");
+    for (const f of docsAiCore) {
+      const p = join(docsAiDir, f);
+      if (!(await pathExists(p))) {
+        rows.push({
+          check: `docs/ai:${f}`,
+          severity: "warn",
+          detail: "missing after link; run /adopt-repo-docs in Cursor",
+        });
+      }
+    }
+  }
+
   const localFiles = ["environment.json", "mcp.json", "hooks.json"] as const;
   for (const f of localFiles) {
     const p = join(cursorDir, f);

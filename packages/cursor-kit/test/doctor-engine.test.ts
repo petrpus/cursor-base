@@ -50,6 +50,13 @@ describe("runDoctor", () => {
     });
     expect(res.exitCode).toBe(0);
     expect(res.rows.some((r) => r.severity === "error")).toBe(false);
+    expect(res.rows.some((r) => r.check === "docs/ai:README.md" && r.severity === "warn")).toBe(true);
+    expect(res.rows.some((r) => r.check === "docs/ai:AGENT_ADOPTION.md" && r.severity === "warn")).toBe(
+      true,
+    );
+    expect(
+      res.rows.some((r) => r.check === "docs/ai:source-of-truth.md" && r.severity === "warn"),
+    ).toBe(true);
   });
 
   it("flags whole-directory .cursor symlink as error", async () => {
