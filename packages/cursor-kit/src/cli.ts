@@ -1,6 +1,13 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 
+import {
+  HELP_AFTER_DOCTOR,
+  HELP_AFTER_INIT_PROJECT,
+  HELP_AFTER_LINK,
+  HELP_AFTER_UNLINK,
+  HELP_EPILOG_ROOT,
+} from "./cli-help-text.js";
 import { runDoctorCommand } from "./commands/doctor-cmd.js";
 import { runInitProjectCommand } from "./commands/init-project-cmd.js";
 import { runLinkCommand } from "./commands/link-cmd.js";
@@ -50,11 +57,17 @@ type InitOpts = NoColorFlag & {
 
 async function main(): Promise<void> {
   const program = new Command();
+  program.helpCommand(false);
   program
     .name("cursor-kit")
-    .description("Link and manage shared Cursor toolkit (.cursor) in project repositories.")
-    .version(getCliVersion())
-    .showHelpAfterError("(use --help for usage)");
+    .description(
+      "Internal CLI for the cursor-base shared Cursor toolkit: symlink shared .cursor/ " +
+        "content into a project, validate layout (doctor), and scaffold local-only files (init-project).",
+    )
+    .version(getCliVersion(), "-V, --version", "print the CLI version")
+    .helpOption("-h, --help", "show structured help (same for every subcommand)")
+    .addHelpText("after", `\n${HELP_EPILOG_ROOT.trim()}\n`)
+    .showHelpAfterError("(use --help or -h for usage)");
 
   program
     .command("link")
@@ -70,10 +83,7 @@ async function main(): Promise<void> {
     .option("--dry-run", "print actions without changing files", false)
     .option("--force", "replace wrong managed symlinks only", false)
     .option("--include-local", "include symlink for shared `local/`", false)
-    .addHelpText(
-      "after",
-      "\nExamples:\n  cursor-kit link --project ~/Code/my-app\n  cursor-kit link --shared ~/Code/cursor-base --dry-run\n",
-    )
+    .addHelpText("after", `\n${HELP_AFTER_LINK.trim()}\n`)
     .action(async (raw: LinkOpts) => {
       const ui = mkUi(raw);
       const code = await runLinkCommand(ui, {
@@ -97,6 +107,7 @@ async function main(): Promise<void> {
       "reserved; manifest-less unlink is not enabled for safety (see README)",
       false,
     )
+    .addHelpText("after", `\n${HELP_AFTER_UNLINK.trim()}\n`)
     .action(async (raw: UnlinkOpts) => {
       const ui = mkUi(raw);
       const code = await runUnlinkCommand(ui, {
@@ -117,6 +128,7 @@ async function main(): Promise<void> {
       "shared .cursor directory or cursor-base repository root (overrides CURSOR_BASE_DIR)",
     )
     .option("--include-local", "expect `local/` symlink when validating", false)
+    .addHelpText("after", `\n${HELP_AFTER_DOCTOR.trim()}\n`)
     .action(async (raw: DoctorOpts) => {
       const ui = mkUi(raw);
       const code = await runDoctorCommand(ui, {
@@ -134,6 +146,7 @@ async function main(): Promise<void> {
     .option("--project <path>", "target project root", process.cwd())
     .option("--dry-run", "print actions without changing files", false)
     .option("--force", "overwrite existing scaffolded files", false)
+    .addHelpText("after", `\n${HELP_AFTER_INIT_PROJECT.trim()}\n`)
     .action(async (raw: InitOpts) => {
       const ui = mkUi(raw);
       const code = await runInitProjectCommand(ui, {

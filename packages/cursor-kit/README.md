@@ -35,8 +35,11 @@ Run the CLI:
 ```bash
 npm run cursor-kit -- doctor --project ~/Code/some-app
 # or
+node packages/cursor-kit/dist/cli.js -h
 node packages/cursor-kit/dist/cli.js link --help
 ```
+
+Use **`-h`** or **`--help`** on the program or any subcommand for structured English help (overview, path discovery, workflow, and command-specific sections). **`--version`** / **`-V`** prints the package version.
 
 From another repository (after install/linking workflow you prefer):
 
