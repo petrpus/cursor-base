@@ -1,6 +1,7 @@
 # Installation Notes
 
-1. Replace the existing `.cursor/` directory with this one.
+0. **Split adoption (recommended for app repos):** if you consume this kit from a separate `cursor-base` checkout, prefer a **real** `project/.cursor/` directory with **symlinked subtrees** instead of symlinking the whole `.cursor` directory. Use the internal **`cursor-kit`** CLI — see [cursor-kit adoption](cursor-kit-adoption.md) and [docs/dev/cursor-kit.md](../../docs/dev/cursor-kit.md) in the `cursor-base` repository.
+1. Replace the existing `.cursor/` directory with this one (whole-directory replacement remains supported for simple cases).
 2. Merge `.cursor/local/gitignore.snippet` into the repository root `.gitignore` if needed.
 3. Verify `hooks.json` points to existing local scripts.
    - Run a short Cursor session and confirm files are created in `tmp/chat-logs/`.

@@ -20,5 +20,6 @@ Project-specific UI and runtime docs live in **docs/ai** so that `.cursor` can r
 | **tooling-policy.md** | Evidence priority and modification policy for UI-focused agents (generic). |
 | **installation-notes.md** | How to install or replace the kit; verify hooks; delegation-friendly prompts. |
 | **README-ui-agent-integration.md** | UI subagents, commands, rules; recommended first run (generic). |
+| **cursor-kit-adoption.md** | How to adopt the split `.cursor` layout using the `cursor-kit` CLI (symlinked shared subtrees + local config). |
 
-Previously project-specific content (ui-stack, design-system, ui-patterns, and this project’s full dev-runtime details) has been moved to **docs/ai**. The long “dev team audit” for this project lives in **docs/CURSOR_DEV_TEAM_AUDIT.md**.
+Previously project-specific content (ui-stack, design-system, ui-patterns, and full dev-runtime details) typically lives in **docs/ai** in **consumer application repositories** that adopt this kit. This `cursor-base` checkout may not include a full `docs/ai/` tree; when absent, treat `.cursor/docs/` plus any repo-local `docs/dev/` notes as the operational docs for the toolkit itself.
