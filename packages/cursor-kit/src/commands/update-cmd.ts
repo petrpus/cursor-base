@@ -1,34 +1,38 @@
 import type { Ui } from "../ui/create-ui.js";
 import { runLinkEngine } from "../core/link-engine.js";
+import { readManifest } from "../core/manifest.js";
 import { resolveSharedCursorDir } from "../core/resolve-shared.js";
-import type { LinkMode, SharedSourceKind } from "../constants.js";
+import type { SharedSourceKind } from "../constants.js";
 import type { ResolveSharedInput } from "../core/resolve-shared.js";
 
-export type LinkCliOpts = {
+export type UpdateCliOpts = {
   project: string;
   shared?: string;
   dryRun: boolean;
-  force: boolean;
   includeLocal: boolean;
-  mode: LinkMode;
   source: SharedSourceKind;
   sharedSourceKind: ResolveSharedInput["sourceKind"];
   sourceRepo?: string;
 };
 
-export async function runLinkCommand(ui: Ui, opts: LinkCliOpts): Promise<number> {
-  ui.title("cursor-kit link");
+export async function runUpdateCommand(ui: Ui, opts: UpdateCliOpts): Promise<number> {
+  ui.title("cursor-kit update");
   ui.keyValue([
     { key: "Project", value: opts.project },
-    { key: "Materialization", value: opts.mode },
     { key: "Source", value: opts.source },
     { key: "Shared", value: opts.shared ?? "(auto)" },
-    { key: "Mode", value: opts.dryRun ? "dry-run" : opts.force ? "apply (force)" : "apply" },
+    { key: "Mode", value: opts.dryRun ? "dry-run" : "apply" },
   ]);
   ui.rule();
 
-  if (opts.source === "public" && opts.mode !== "copy") {
-    ui.error("Public source is supported only with --mode copy.");
+  const manifest = await readManifest(opts.project);
+  if (!manifest) {
+    ui.error("No managed manifest found. Run `cursor-kit link --mode copy` first.");
+    return 2;
+  }
+  const managedCopyPaths = manifest.managed.filter((entry) => entry.mode === "copy").map((entry) => entry.path);
+  if (managedCopyPaths.length === 0) {
+    ui.error("No managed copy entries found. `cursor-kit update` only refreshes copy-mode entries.");
     return 2;
   }
 
@@ -42,21 +46,19 @@ export async function runLinkCommand(ui: Ui, opts: LinkCliOpts): Promise<number>
     ui.error(sharedRes.reason);
     return 2;
   }
-  if (sharedRes.sourceKind === "public" && opts.mode !== "copy") {
-    ui.error("Resolved public source requires --mode copy.");
-    return 2;
-  }
 
   ui.info(`Resolved shared .cursor: ${sharedRes.sharedCursorDir} (${sharedRes.source})`);
+  ui.info("Refreshing managed copied entries from source.");
 
   const result = await runLinkEngine({
     projectRoot: opts.project,
     sharedRoot: sharedRes.sharedCursorDir,
-    includeLocal: opts.includeLocal,
+    includeLocal: opts.includeLocal || managedCopyPaths.includes("local"),
     dryRun: opts.dryRun,
-    force: opts.force,
-    mode: opts.mode,
-    refreshManagedCopy: false,
+    force: false,
+    mode: "copy",
+    refreshManagedCopy: true,
+    managedOnlyPaths: managedCopyPaths,
     sourceKind: sharedRes.sourceKind,
     sourceRepo: sharedRes.sourceRepo,
     sourceRef: sharedRes.sourceRef,
@@ -79,7 +81,7 @@ export async function runLinkCommand(ui: Ui, opts: LinkCliOpts): Promise<number>
     ui.warn("Dry run: no filesystem changes were made.");
   } else {
     ui.success(
-      `Done. Managed entries: ${String(result.managed.length)}. Manifest written: ${String(result.wroteManifest)}.`,
+      `Updated managed copy entries: ${String(result.managed.length)}. Manifest written: ${String(result.wroteManifest)}.`,
     );
   }
   return 0;

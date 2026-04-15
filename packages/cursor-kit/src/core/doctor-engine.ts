@@ -1,12 +1,8 @@
 import { join } from "node:path";
 
 import { buildLinkNames } from "./link-targets.js";
-import {
-  isSymlink,
-  pathExists,
-  safeRealpath,
-  symlinkPointsToRealpath,
-} from "./fs-utils.js";
+import { digestPath } from "./copy-utils.js";
+import { isSymlink, pathExists, safeRealpath, symlinkPointsToRealpath } from "./fs-utils.js";
 import { readManifest } from "./manifest.js";
 import { resolveSharedCursorDir } from "./resolve-shared.js";
 
@@ -63,9 +59,15 @@ export async function runDoctor(input: DoctorInput): Promise<DoctorResult> {
     rows.push({ check: "split layout", severity: "ok", detail: ".cursor is a real directory" });
   }
 
+  const manifest = await readManifest(input.projectRoot);
+  const sharedSourceKind = manifest?.source.kind ?? "local";
+  const sharedSourceRepo = manifest?.source.repo;
+
   const sharedRes = await resolveSharedCursorDir({
     explicit: input.sharedExplicit,
     projectDir: input.projectRoot,
+    sourceKind: sharedSourceKind,
+    sourceRepo: sharedSourceRepo,
   });
   if (!sharedRes.ok) {
     rows.push({ check: "shared source", severity: "error", detail: sharedRes.reason });
@@ -84,7 +86,6 @@ export async function runDoctor(input: DoctorInput): Promise<DoctorResult> {
     }
   }
 
-  const manifest = await readManifest(input.projectRoot);
   const sharedRoot =
     sharedRes.ok && (await isSharedCursorRoot(sharedRes.sharedCursorDir))
       ? sharedRes.sharedCursorDir
@@ -100,7 +101,7 @@ export async function runDoctor(input: DoctorInput): Promise<DoctorResult> {
     rows.push({
       check: "managed manifest",
       severity: "ok",
-      detail: `managed entries: ${String(manifest.managed.length)}`,
+      detail: `managed entries: ${String(manifest.managed.length)} (mode=${manifest.mode})`,
     });
   }
 
@@ -111,6 +112,7 @@ export async function runDoctor(input: DoctorInput): Promise<DoctorResult> {
     for (const name of expected) {
       const dest = join(cursorDir, name);
       const src = join(sharedRoot, name);
+      const managedEntry = manifest?.managed.find((entry) => entry.path === name);
       if (!(await pathExists(src))) {
         rows.push({
           check: `shared:${name}`,
@@ -125,6 +127,37 @@ export async function runDoctor(input: DoctorInput): Promise<DoctorResult> {
           severity: "warn",
           detail: "missing in project .cursor/",
         });
+        continue;
+      }
+      if (managedEntry?.mode === "copy") {
+        if (await isSymlink(dest)) {
+          rows.push({
+            check: `link:${name}`,
+            severity: "error",
+            detail: "expected copied entry but found symlink",
+          });
+          errors++;
+          continue;
+        }
+        if (managedEntry.digest) {
+          let currentDigest: string | undefined;
+          try {
+            currentDigest = await digestPath(dest);
+          } catch {
+            currentDigest = undefined;
+          }
+          if (!currentDigest || currentDigest !== managedEntry.digest) {
+            rows.push({
+              check: `link:${name}`,
+              severity: "warn",
+              detail: "copy digest differs from last managed snapshot (run cursor-kit update)",
+            });
+          } else {
+            rows.push({ check: `link:${name}`, severity: "ok", detail: "copied content OK" });
+          }
+        } else {
+          rows.push({ check: `link:${name}`, severity: "ok", detail: "copied content present" });
+        }
         continue;
       }
       if (!(await isSymlink(dest))) {
@@ -187,7 +220,7 @@ export async function runDoctor(input: DoctorInput): Promise<DoctorResult> {
 
   if (manifest && sharedRoot) {
     const realShared = (await safeRealpath(sharedRoot)) ?? sharedRoot;
-    const manShared = manifest.sharedRoot;
+    const manShared = manifest.source.sharedRoot;
     const same = (await safeRealpath(manShared)) === (await safeRealpath(realShared));
     if (!same) {
       rows.push({

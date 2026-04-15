@@ -1,10 +1,19 @@
-import { access, lstat } from "node:fs/promises";
+import { access, mkdtemp, rm } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { constants as FsConstants } from "node:fs";
+import { tmpdir } from "node:os";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 
-import { ENV_CURSOR_BASE_DIR } from "../constants.js";
+import {
+  DEFAULT_PUBLIC_CURSOR_BASE_REPO,
+  ENV_CURSOR_BASE_DIR,
+  PUBLIC_CURSOR_BASE_BRANCH,
+  type SharedSourceKind,
+} from "../constants.js";
 import { pathExists, safeRealpath } from "./fs-utils.js";
+const execFileAsync = promisify(execFile);
 
 const MARKERS = ["manifest.md", "rules"] as const;
 
@@ -30,8 +39,7 @@ async function normalizeToSharedCursorDir(p: string): Promise<string> {
 async function canReadDir(p: string): Promise<boolean> {
   try {
     await access(p, FsConstants.R_OK);
-    const s = await lstat(p);
-    return s.isDirectory();
+    return true;
   } catch {
     return false;
   }
@@ -66,13 +74,59 @@ export type ResolveSharedInput = {
   explicit?: string;
   envRepoRoot?: string;
   projectDir: string;
+  sourceKind: SharedSourceKind | "local-or-public";
+  sourceRepo?: string;
 };
 
 export type ResolveSharedResult =
-  | { ok: true; sharedCursorDir: string; source: "flag" | "env" | "ancestor" | "home" }
+  | {
+      ok: true;
+      sharedCursorDir: string;
+      source: "flag" | "env" | "ancestor" | "home" | "public";
+      sourceKind: SharedSourceKind;
+      sourceRepo?: string;
+      sourceRef?: string;
+    }
   | { ok: false; reason: string };
 
+async function resolveSharedFromPublicRepo(repo: string): Promise<ResolveSharedResult> {
+  const tmpRoot = await mkdtemp(join(tmpdir(), "cursor-kit-public-"));
+  const targetRepo = `https://github.com/${repo}.git`;
+  try {
+    await execFileAsync("git", ["clone", "--depth", "1", "--branch", PUBLIC_CURSOR_BASE_BRANCH, targetRepo, tmpRoot], {
+      timeout: 180000,
+    });
+  } catch (error) {
+    await rm(tmpRoot, { recursive: true, force: true });
+    const message = error instanceof Error ? error.message : String(error);
+    return { ok: false, reason: `Failed to clone public source (${repo}@${PUBLIC_CURSOR_BASE_BRANCH}): ${message}` };
+  }
+
+  const sharedDir = join(tmpRoot, ".cursor");
+  if (!(await isSharedCursorRoot(sharedDir))) {
+    await rm(tmpRoot, { recursive: true, force: true });
+    return {
+      ok: false,
+      reason: `Cloned public source is missing .cursor markers (manifest.md/rules): ${sharedDir}`,
+    };
+  }
+  const real = (await safeRealpath(sharedDir)) ?? sharedDir;
+  return {
+    ok: true,
+    sharedCursorDir: real,
+    source: "public",
+    sourceKind: "public",
+    sourceRepo: repo,
+    sourceRef: PUBLIC_CURSOR_BASE_BRANCH,
+  };
+}
+
 export async function resolveSharedCursorDir(input: ResolveSharedInput): Promise<ResolveSharedResult> {
+  if (input.sourceKind === "public") {
+    const repo = input.sourceRepo ?? DEFAULT_PUBLIC_CURSOR_BASE_REPO;
+    return resolveSharedFromPublicRepo(repo);
+  }
+
   if (input.explicit) {
     const dir = await normalizeToSharedCursorDir(input.explicit);
     if (!(await isSharedCursorRoot(dir))) {
@@ -82,7 +136,7 @@ export async function resolveSharedCursorDir(input: ResolveSharedInput): Promise
       };
     }
     const real = (await safeRealpath(dir)) ?? dir;
-    return { ok: true, sharedCursorDir: real, source: "flag" };
+    return { ok: true, sharedCursorDir: real, source: "flag", sourceKind: "local" };
   }
 
   const env = input.envRepoRoot ?? process.env[ENV_CURSOR_BASE_DIR];
@@ -95,17 +149,22 @@ export async function resolveSharedCursorDir(input: ResolveSharedInput): Promise
       };
     }
     const real = (await safeRealpath(dir)) ?? dir;
-    return { ok: true, sharedCursorDir: real, source: "env" };
+    return { ok: true, sharedCursorDir: real, source: "env", sourceKind: "local" };
   }
 
   const fromAncestors = await autodetectSharedFromAncestors(input.projectDir);
   if (fromAncestors) {
-    return { ok: true, sharedCursorDir: fromAncestors, source: "ancestor" };
+    return { ok: true, sharedCursorDir: fromAncestors, source: "ancestor", sourceKind: "local" };
   }
 
   const fromHome = await autodetectHomeDefault();
   if (fromHome) {
-    return { ok: true, sharedCursorDir: fromHome, source: "home" };
+    return { ok: true, sharedCursorDir: fromHome, source: "home", sourceKind: "local" };
+  }
+
+  if (input.sourceKind === "local-or-public") {
+    const repo = input.sourceRepo ?? DEFAULT_PUBLIC_CURSOR_BASE_REPO;
+    return resolveSharedFromPublicRepo(repo);
   }
 
   return {

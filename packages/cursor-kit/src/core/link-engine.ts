@@ -2,6 +2,10 @@ import { lstat, mkdir, rm, symlink } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 
 import { getCliVersion } from "../version.js";
+import {
+  type LinkMode,
+  type SharedSourceKind,
+} from "../constants.js";
 import { buildLinkNames } from "./link-targets.js";
 import {
   isSymlink,
@@ -10,7 +14,15 @@ import {
   safeRealpath,
   symlinkPointsToRealpath,
 } from "./fs-utils.js";
-import { MANIFEST_VERSION, writeManifest, type ManagedManifest } from "./manifest.js";
+import {
+  MANIFEST_VERSION,
+  readManifest,
+  writeManifest,
+  type ManagedEntry,
+  type ManagedManifest,
+} from "./manifest.js";
+import { copyEntryFromSource, digestPath } from "./copy-utils.js";
+import { updateCopyModeGitIgnore } from "./copy-gitignore.js";
 
 export type LinkRow = {
   name: string;
@@ -41,6 +53,14 @@ export type LinkEngineInput = {
   includeLocal: boolean;
   dryRun: boolean;
   force: boolean;
+  mode: LinkMode;
+  /** When true, managed copy entries may be refreshed from source (used by update command). */
+  refreshManagedCopy: boolean;
+  /** Optional managed-entry subset for refresh/update workflows. */
+  managedOnlyPaths?: string[];
+  sourceKind: SharedSourceKind;
+  sourceRepo?: string;
+  sourceRef?: string;
 };
 
 async function ensureProjectCursorDir(projectRoot: string): Promise<string | undefined> {
@@ -86,8 +106,11 @@ async function planEntry(params: {
   sharedRoot: string;
   projectRoot: string;
   force: boolean;
+  mode: LinkMode;
+  refreshManagedCopy: boolean;
+  existingManaged?: ManagedEntry;
 }): Promise<{ row: LinkRow; planned: Planned }> {
-  const { name, kind, sharedRoot, projectRoot, force } = params;
+  const { name, kind, sharedRoot, projectRoot, force, mode, refreshManagedCopy, existingManaged } = params;
   const source = join(sharedRoot, name);
   const dest = join(projectRoot, ".cursor", name);
 
@@ -108,29 +131,89 @@ async function planEntry(params: {
     };
   }
 
-  if (await isSymlink(dest)) {
-    const ok = await symlinkPointsToRealpath(dest, sourceReal);
-    if (ok) {
-      return { row: { name, kind, status: "unchanged", detail: "symlink OK" }, planned: { op: "noop_ok" } };
+  const destIsSymlink = await isSymlink(dest);
+  if (mode === "symlink") {
+    if (destIsSymlink) {
+      const ok = await symlinkPointsToRealpath(dest, sourceReal);
+      if (ok) {
+        return { row: { name, kind, status: "unchanged", detail: "symlink OK" }, planned: { op: "noop_ok" } };
+      }
+      if (!force) {
+        const cur = (await readSymlinkTarget(dest)) ?? "?";
+        return {
+          row: {
+            name,
+            kind,
+            status: "conflict_wrong_symlink",
+            detail: `points elsewhere (${cur}); use --force to replace`,
+          },
+          planned: {
+            op: "conflict_wrong_symlink",
+            detail: `wrong symlink`,
+          },
+        };
+      }
+      return {
+        row: { name, kind, status: "would_replace", detail: "wrong symlink" },
+        planned: { op: "replace", sourceReal },
+      };
     }
-    if (!force) {
+    if (force && existingManaged?.mode === "copy") {
+      return {
+        row: { name, kind, status: "would_replace", detail: "replace managed copy with symlink" },
+        planned: { op: "replace", sourceReal },
+      };
+    }
+    return {
+      row: {
+        name,
+        kind,
+        status: "conflict_not_symlink",
+        detail: "exists and is not a symlink (repo-specific content); not overwriting",
+      },
+      planned: { op: "conflict_not_symlink", detail: "not a symlink" },
+    };
+  }
+
+  if (destIsSymlink) {
+    const ok = await symlinkPointsToRealpath(dest, sourceReal);
+    if (ok && existingManaged?.mode === "symlink" && force) {
+      return {
+        row: { name, kind, status: "would_replace", detail: "replace managed symlink with copied content" },
+        planned: { op: "replace", sourceReal },
+      };
+    }
+    if (!force || existingManaged?.mode !== "symlink") {
       const cur = (await readSymlinkTarget(dest)) ?? "?";
       return {
         row: {
           name,
           kind,
           status: "conflict_wrong_symlink",
-          detail: `points elsewhere (${cur}); use --force to replace`,
+          detail: `symlink present (${cur}); use --force to replace managed symlink`,
         },
         planned: {
           op: "conflict_wrong_symlink",
-          detail: `wrong symlink`,
+          detail: "symlink present in copy mode",
         },
       };
     }
     return {
-      row: { name, kind, status: "would_replace", detail: "wrong symlink" },
+      row: { name, kind, status: "would_replace", detail: "replace managed symlink with copied content" },
       planned: { op: "replace", sourceReal },
+    };
+  }
+
+  if (existingManaged?.mode === "copy") {
+    if (refreshManagedCopy) {
+      return {
+        row: { name, kind, status: "would_replace", detail: "refresh managed copied content from source" },
+        planned: { op: "replace", sourceReal },
+      };
+    }
+    return {
+      row: { name, kind, status: "unchanged", detail: "managed copy present (link does not refresh)" },
+      planned: { op: "noop_ok" },
     };
   }
 
@@ -161,26 +244,38 @@ export async function runLinkEngine(input: LinkEngineInput): Promise<LinkEngineR
     return { rows: [], managed: [], errorMessages: [preErr], wroteManifest: false };
   }
 
+  const sourceRootReal = (await safeRealpath(input.sharedRoot)) ?? resolve(input.sharedRoot);
   const { dirs, files } = buildLinkNames({ includeLocal: input.includeLocal });
+  const managedOnlySet = input.managedOnlyPaths ? new Set(input.managedOnlyPaths) : undefined;
+  const selectedDirs = managedOnlySet ? dirs.filter((name) => managedOnlySet.has(name)) : dirs;
+  const selectedFiles = managedOnlySet ? files.filter((name) => managedOnlySet.has(name)) : files;
+  const existingManifest = await readManifest(input.projectRoot);
+  const existingManagedMap = new Map(existingManifest?.managed.map((entry) => [entry.path, entry]) ?? []);
   const planned: { name: string; kind: "dir" | "file"; planned: Planned; baseRow: LinkRow }[] = [];
 
-  for (const name of dirs) {
+  for (const name of selectedDirs) {
     const { row, planned: p } = await planEntry({
       name,
       kind: "dir",
       sharedRoot: input.sharedRoot,
       projectRoot: input.projectRoot,
       force: input.force,
+      mode: input.mode,
+      refreshManagedCopy: input.refreshManagedCopy,
+      existingManaged: existingManagedMap.get(name),
     });
     planned.push({ name, kind: "dir", planned: p, baseRow: row });
   }
-  for (const name of files) {
+  for (const name of selectedFiles) {
     const { row, planned: p } = await planEntry({
       name,
       kind: "file",
       sharedRoot: input.sharedRoot,
       projectRoot: input.projectRoot,
       force: input.force,
+      mode: input.mode,
+      refreshManagedCopy: input.refreshManagedCopy,
+      existingManaged: existingManagedMap.get(name),
     });
     planned.push({ name, kind: "file", planned: p, baseRow: row });
   }
@@ -201,12 +296,30 @@ export async function runLinkEngine(input: LinkEngineInput): Promise<LinkEngineR
     for (const item of planned) {
       const dest = join(input.projectRoot, ".cursor", item.name);
       if (item.planned.op === "create") {
-        const rel = relative(dirname(dest), item.planned.sourceReal);
-        await symlink(rel, dest);
+        if (input.mode === "symlink") {
+          const rel = relative(dirname(dest), item.planned.sourceReal);
+          await symlink(rel, dest);
+        } else {
+          await copyEntryFromSource({
+            sourcePath: item.planned.sourceReal,
+            destPath: dest,
+            sourceRoot: sourceRootReal,
+            destRoot: join(input.projectRoot, ".cursor"),
+          });
+        }
       } else if (item.planned.op === "replace") {
-        await rm(dest);
-        const rel = relative(dirname(dest), item.planned.sourceReal);
-        await symlink(rel, dest);
+        await rm(dest, { recursive: true, force: true });
+        if (input.mode === "symlink") {
+          const rel = relative(dirname(dest), item.planned.sourceReal);
+          await symlink(rel, dest);
+        } else {
+          await copyEntryFromSource({
+            sourcePath: item.planned.sourceReal,
+            destPath: dest,
+            sourceRoot: sourceRootReal,
+            destRoot: join(input.projectRoot, ".cursor"),
+          });
+        }
       }
     }
   }
@@ -223,20 +336,45 @@ export async function runLinkEngine(input: LinkEngineInput): Promise<LinkEngineR
     .map((x) => x.name)
     .sort();
 
-  const manifestManaged = planned
-    .filter((x) => x.planned.op === "noop_ok" || x.planned.op === "create" || x.planned.op === "replace")
-    .map((x) => x.name)
-    .sort();
+  const manifestManagedEntries: ManagedEntry[] = [];
+  for (const item of planned) {
+    if (!(item.planned.op === "noop_ok" || item.planned.op === "create" || item.planned.op === "replace")) {
+      continue;
+    }
+    let digest: string | undefined;
+    if (input.mode === "copy" && !input.dryRun) {
+      const destPath = join(input.projectRoot, ".cursor", item.name);
+      digest = await digestPath(destPath);
+    }
+    manifestManagedEntries.push({
+      path: item.name,
+      kind: item.kind,
+      mode: input.mode,
+      sourcePath: item.name,
+      digest,
+    });
+  }
 
   let wroteManifest = false;
   if (!input.dryRun) {
     const manifest: ManagedManifest = {
       version: MANIFEST_VERSION,
       cliVersion: getCliVersion(),
-      sharedRoot: (await safeRealpath(input.sharedRoot)) ?? resolve(input.sharedRoot),
-      managed: manifestManaged,
+      mode: input.mode,
+      source: {
+        kind: input.sourceKind,
+        sharedRoot: sourceRootReal,
+        repo: input.sourceRepo,
+        ref: input.sourceRef,
+      },
+      managed: manifestManagedEntries,
     };
     await writeManifest(input.projectRoot, manifest);
+    await updateCopyModeGitIgnore({
+      projectRoot: input.projectRoot,
+      mode: input.mode,
+      managedEntries: input.mode === "copy" ? manifestManagedEntries.map((entry) => entry.path) : [],
+    });
     wroteManifest = true;
   }
 

@@ -11,7 +11,9 @@ Portable copy (travels when `.cursor/docs` is symlinked): [`.cursor/docs/cursor-
 ## Recommended layout in a consumer project
 
 - **`project/.cursor/`** is a real directory (not a symlink to another repo).
-- **Shared** subtrees are **symlinks** into `cursor-base/.cursor/` (for example `agents`, `rules`, …).
+- Shared entries can be materialized in two modes:
+  - **symlink mode** (default): managed entries are symlinks into `cursor-base/.cursor/`.
+  - **copy mode**: managed entries are copied into `project/.cursor/` and tracked in the manifest.
 - **Repo-local** Cursor configuration stays as real files, typically:
   - `.cursor/environment.json`
   - `.cursor/mcp.json`
@@ -24,12 +26,16 @@ Use this order so filesystem layout is correct before agents author **`docs/ai/`
 
 1. **Toolchain:** Node.js 20+, `cursor-kit` installed or built from `cursor-base` (see package README).
 2. **Scaffold local Cursor files:** `cursor-kit init-project --project <repo>` (use `--dry-run` first if you prefer).
-3. **Link shared toolkit:** `cursor-kit link --shared <path-to-cursor-base> --project <repo>` (again, `--dry-run` first is fine).
+3. **Materialize shared toolkit entries:** `cursor-kit link --shared <path-to-cursor-base> --project <repo>` (again, `--dry-run` first is fine).  
+   - For copied entries instead of symlinks: add `--mode copy`.
+   - For public source on branch `main`: use `--source public --mode copy` (public source is not supported with symlink mode).
+   - `--source auto` first attempts local discovery and falls back to public `main` only when local resolution fails.
 4. **Validate:** `cursor-kit doctor --project <repo>` — fix any **errors** before continuing.
-5. **Complete `docs/ai` in Cursor:** open the project in Cursor and run the slash command **`/adopt-repo-docs`** (defined in `.cursor/commands/` once linked). That command drives agents to inspect the repo and create or refresh the adoption set (`docs/ai/README.md`, `AGENT_ADOPTION.md`, `source-of-truth.md`, navigation docs, `AGENTS.md`, optional design notes). **Skip this if you only want filesystem + local `.cursor` files** and will maintain `docs/ai` yourself.
-6. **UI-heavy repos:** after `/adopt-repo-docs`, if you maintain a real frontend stack, follow with **`/adopt-design-system`** for `docs/ai/design-system.md`, `ui-stack.md`, and `ui-patterns.md`.
-7. **Cursor Cloud agents (optional):** only if you use them, run **`/adopt-cloud-env`** separately to draft **`.cursor/environment.json`** (safe `env` literals only) and get a **Cursor Secrets** checklist — see `.cursor/commands/adopt-cloud-env.md`. This is **not** part of **`/adopt-repo-docs`**.
-8. **Commit** what you intend to track (often `AGENTS.md`, `docs/ai/**`, `.cursor/mcp.json`). Do not commit secrets.
+5. **Copy mode refresh (optional):** run `cursor-kit update --project <repo>` when you want to pull newer shared content into existing managed copies. `link` intentionally does not refresh managed copied entries, and `update` does not bootstrap fresh projects.
+6. **Complete `docs/ai` in Cursor:** open the project in Cursor and run the slash command **`/adopt-repo-docs`** (defined in `.cursor/commands/` once linked). That command drives agents to inspect the repo and create or refresh the adoption set (`docs/ai/README.md`, `AGENT_ADOPTION.md`, `source-of-truth.md`, navigation docs, `AGENTS.md`, optional design notes). **Skip this if you only want filesystem + local `.cursor` files** and will maintain `docs/ai` yourself.
+7. **UI-heavy repos:** after `/adopt-repo-docs`, if you maintain a real frontend stack, follow with **`/adopt-design-system`** for `docs/ai/design-system.md`, `ui-stack.md`, and `ui-patterns.md`.
+8. **Cursor Cloud agents (optional):** only if you use them, run **`/adopt-cloud-env`** separately to draft **`.cursor/environment.json`** (safe `env` literals only) and get a **Cursor Secrets** checklist — see `.cursor/commands/adopt-cloud-env.md`. This is **not** part of **`/adopt-repo-docs`**.
+9. **Commit** what you intend to track (often `AGENTS.md`, `docs/ai/**`, `.cursor/mcp.json`). Do not commit secrets.
 
 `cursor-kit doctor` may **warn** when core `docs/ai` entry files are still missing after a successful **`link`** (manifest present); that reminder points you at **`/adopt-repo-docs`**.
 
@@ -99,6 +105,17 @@ rm -rf ".cursor.bak.<timestamp>"
 
 - **CI / headless:** `doctor` and discovery rely on the filesystem only; avoid relying on `$HOME`-based auto-detection in CI—pass **`--shared`** explicitly.
 - **`unlink` does not migrate** a whole-directory `.cursor` symlink: it only removes symlinks listed in `.cursor/.cursor-kit-managed.json`. Migration is always: break root symlink → real dir → `init-project` → `link`.
+
+---
+
+## Copy mode notes
+
+- Copy mode is intended for consumers that do not want managed symlinks but still want shared setup seeded and managed.
+- Managed copied entries are tracked in `.cursor/.cursor-kit-managed.json`.
+- `link --mode copy` is conservative: if a managed copied entry already exists, it stays unchanged.
+- Use `cursor-kit update` to refresh managed copied entries from source.
+- For safety, `unlink` skips modified copied entries by default; use `--force-remove-modified-copy` if you intentionally want to remove those local modifications.
+- `link --source public` (or `--source auto` when local shared source is unavailable) resolves from the configured public repo on the `main` branch and requires copy mode materialization.
 
 ---
 

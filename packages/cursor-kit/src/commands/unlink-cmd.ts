@@ -4,7 +4,8 @@ import { runUnlinkEngine } from "../core/unlink-engine.js";
 export type UnlinkCliOpts = {
   project: string;
   dryRun: boolean;
-  force: boolean;
+  forceWithoutManifest: boolean;
+  forceRemoveModifiedCopy: boolean;
 };
 
 export async function runUnlinkCommand(ui: Ui, opts: UnlinkCliOpts): Promise<number> {
@@ -18,7 +19,8 @@ export async function runUnlinkCommand(ui: Ui, opts: UnlinkCliOpts): Promise<num
   const result = await runUnlinkEngine({
     projectRoot: opts.project,
     dryRun: opts.dryRun,
-    forceWithoutManifest: opts.force,
+    forceWithoutManifest: opts.forceWithoutManifest,
+    forceRemoveModifiedCopy: opts.forceRemoveModifiedCopy,
   });
 
   if (result.errorMessages.length > 0) {

@@ -30,11 +30,19 @@ describe("runUnlinkEngine", () => {
       includeLocal: false,
       dryRun: false,
       force: false,
+      mode: "symlink",
+      refreshManagedCopy: false,
+      sourceKind: "local",
     });
     const local = join(project, ".cursor", "mcp.json");
     await writeFile(local, "{}", "utf8");
 
-    const res = await runUnlinkEngine({ projectRoot: project, dryRun: false, forceWithoutManifest: false });
+    const res = await runUnlinkEngine({
+      projectRoot: project,
+      dryRun: false,
+      forceWithoutManifest: false,
+      forceRemoveModifiedCopy: false,
+    });
     expect(res.errorMessages).toEqual([]);
     expect(await pathExists(local)).toBe(true);
     expect(await pathExists(join(project, ".cursor", "agents"))).toBe(false);
@@ -48,8 +56,16 @@ describe("runUnlinkEngine", () => {
       includeLocal: false,
       dryRun: false,
       force: false,
+      mode: "symlink",
+      refreshManagedCopy: false,
+      sourceKind: "local",
     });
-    const res = await runUnlinkEngine({ projectRoot: project, dryRun: true, forceWithoutManifest: false });
+    const res = await runUnlinkEngine({
+      projectRoot: project,
+      dryRun: true,
+      forceWithoutManifest: false,
+      forceRemoveModifiedCopy: false,
+    });
     expect(res.errorMessages).toEqual([]);
     expect(await pathExists(join(project, ".cursor", "agents"))).toBe(true);
     expect(await readManifest(project)).toBeTruthy();
@@ -62,6 +78,9 @@ describe("runUnlinkEngine", () => {
       includeLocal: false,
       dryRun: false,
       force: false,
+      mode: "symlink",
+      refreshManagedCopy: false,
+      sourceKind: "local",
     });
     const agents = join(project, ".cursor", "agents");
     await mkdir(join(project, ".cursor"), { recursive: true });
@@ -70,10 +89,85 @@ describe("runUnlinkEngine", () => {
     await rm(agents);
     await symlink("/tmp/other", agents);
 
-    const res = await runUnlinkEngine({ projectRoot: project, dryRun: false, forceWithoutManifest: false });
+    const res = await runUnlinkEngine({
+      projectRoot: project,
+      dryRun: false,
+      forceWithoutManifest: false,
+      forceRemoveModifiedCopy: false,
+    });
     expect(res.errorMessages).toEqual([]);
     expect(res.rows.some((r) => r.status === "skipped_wrong_target")).toBe(true);
     const target = await readlink(agents);
     expect(target).toBe("/tmp/other");
+  });
+
+  it("skips modified managed copies by default", async () => {
+    await runLinkEngine({
+      projectRoot: project,
+      sharedRoot: shared,
+      includeLocal: false,
+      dryRun: false,
+      force: false,
+      mode: "copy",
+      refreshManagedCopy: false,
+      sourceKind: "local",
+    });
+    await writeFile(join(project, ".cursor", "agents", "local-change.txt"), "x", "utf8");
+    const res = await runUnlinkEngine({
+      projectRoot: project,
+      dryRun: false,
+      forceWithoutManifest: false,
+      forceRemoveModifiedCopy: false,
+    });
+    expect(res.errorMessages).toEqual([]);
+    expect(res.rows.some((r) => r.status === "skipped_modified_copy")).toBe(true);
+    expect(await pathExists(join(project, ".cursor", "agents"))).toBe(true);
+  });
+
+  it("removes modified managed copies with force variant", async () => {
+    await runLinkEngine({
+      projectRoot: project,
+      sharedRoot: shared,
+      includeLocal: false,
+      dryRun: false,
+      force: false,
+      mode: "copy",
+      refreshManagedCopy: false,
+      sourceKind: "local",
+    });
+    await writeFile(join(project, ".cursor", "agents", "local-change.txt"), "x", "utf8");
+    const res = await runUnlinkEngine({
+      projectRoot: project,
+      dryRun: false,
+      forceWithoutManifest: false,
+      forceRemoveModifiedCopy: true,
+    });
+    expect(res.errorMessages).toEqual([]);
+    expect(await pathExists(join(project, ".cursor", "agents"))).toBe(false);
+  });
+
+  it("retains manifest when modified copy entries are skipped", async () => {
+    await runLinkEngine({
+      projectRoot: project,
+      sharedRoot: shared,
+      includeLocal: false,
+      dryRun: false,
+      force: false,
+      mode: "copy",
+      refreshManagedCopy: false,
+      sourceKind: "local",
+    });
+    await writeFile(join(project, ".cursor", "agents", "local-change.txt"), "x", "utf8");
+    const res = await runUnlinkEngine({
+      projectRoot: project,
+      dryRun: false,
+      forceWithoutManifest: false,
+      forceRemoveModifiedCopy: false,
+    });
+    expect(res.errorMessages).toEqual([]);
+    expect(res.rows.some((r) => r.status === "skipped_modified_copy")).toBe(true);
+    const manifest = await readManifest(project);
+    expect(manifest).toBeTruthy();
+    expect(manifest?.managed.some((entry) => entry.path === "agents")).toBe(true);
   });
 });

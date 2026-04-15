@@ -11,7 +11,9 @@ Historically, some teams symlinked an entire `project/.cursor` directory to `cur
 **Recommended model:**
 
 - `project/.cursor/` is a **real local directory**
-- selected shared subtrees are **symlinks** into `cursor-base/.cursor/`
+- selected shared subtrees are managed by `cursor-kit` in either:
+  - **symlink mode** (default), or
+  - **copy mode** (hard-copied entries kept git-ignored under `.cursor/.gitignore`)
 - repo-local Cursor files remain **real files** in the project (for example `.cursor/mcp.json`)
 
 This package automates that layout with explicit safety rules.
@@ -59,11 +61,14 @@ Priority order:
    - walk parent directories of `--project` / current working directory looking for `cursor-base/.cursor`
    - fall back to `$HOME/Code/cursor-base/.cursor` when it looks valid
 
+When `--source auto` is used and local resolution fails, cursor-kit falls back to the public source
+repository (`cursor-sh/cursor-base`) on branch `main`.
+
 ## Commands
 
 ### `link`
 
-Creates `project/.cursor/` (if needed) and symlinks the default shared entries:
+Creates `project/.cursor/` (if needed) and materializes the default shared entries:
 
 - Directories: `agents`, `commands`, `context`, `docs`, `hooks`, `rules`
 - Optional: `--include-local` also links `local/`
@@ -80,27 +85,49 @@ Flags:
 - `--project <path>` (default: current working directory)
 - `--shared <path>` (optional; see discovery above)
 - `--dry-run`
-- `--force` replaces **wrong managed symlinks** only (never replaces real directories/files)
+- `--mode <symlink|copy>` (default: `symlink`)
+- aliases: `--symlink`, `--copy`
+- `--source <local|public|auto>` (default: `auto`; `public` clones from GitHub using `main`)
+- `--source public` requires `--mode copy` (symlink mode with public source is rejected)
+- `--source-repo <owner/repo>` (used with `--source public`; defaults to `cursor-sh/cursor-base`)
+- `--force` allows replacing managed entries when switching materialization mode (still never overwrites unmanaged real directories/files)
 - `--include-local`
 
 **Idempotency:** repeated `link` is a no-op when everything already matches.
+
+In copy mode, `link` intentionally does **not refresh** already-managed copied entries from source. Use `cursor-kit update` to pull source changes.
 
 **Whole-directory `.cursor` symlink:** `link` refuses by default. Use the **legacy migration** procedure (backup `mv`, `mkdir`, `init-project`, `link`, `doctor`) in [`docs/dev/cursor-kit.md`](../../docs/dev/cursor-kit.md).
 
 ### `unlink`
 
-Removes **only** symlinks recorded in:
+Removes **only** managed entries recorded in:
 
 - `.cursor/.cursor-kit-managed.json`
 
-Local files like `mcp.json` are untouched.
+Local files like `mcp.json` are untouched. In copy mode, modified managed copies are skipped by default.
 
 Flags:
 
 - `--project <path>`
 - `--dry-run`
+- `--force-without-manifest` (still safety-restricted; manifest-less unlink is intentionally not implemented)
+- `--force-remove-modified-copy` (remove managed copied entries even when local edits are detected)
 
-`--force` is reserved; manifest-less unlink is intentionally not enabled for safety.
+### `update`
+
+Refreshes managed copied entries from source. This is intentionally separate from `link`.
+`update` requires an existing managed manifest with copy-mode entries and does not bootstrap
+new projects.
+
+Flags:
+
+- `--project <path>`
+- `--shared <path>` (optional for local source)
+- `--source <local|public|auto>` (default: `auto`)
+- `--source-repo <owner/repo>` (used with `--source public`; defaults to `cursor-sh/cursor-base`)
+- `--include-local`
+- `--dry-run`
 
 ### `doctor`
 
@@ -108,7 +135,8 @@ Validates:
 
 - `.cursor` exists and is not a whole-directory symlink (migration signal)
 - shared source resolves and looks like a real shared `.cursor` tree
-- expected symlinks exist and resolve to the shared paths
+- expected managed entries exist and match manifest mode (symlink/copy)
+- copy mode entries optionally checked against stored digest (warns on drift)
 - optional local files exist (`environment.json`, `mcp.json`, `hooks.json`) — warns if missing
 - after a successful **`link`** (managed manifest present), warns if core **`docs/ai`** entry files are still missing (`README.md`, `AGENT_ADOPTION.md`, `source-of-truth.md`) — run **`/adopt-repo-docs`** in Cursor
 
@@ -136,11 +164,15 @@ This command does **not** link shared content.
 ## End-to-end onboarding (consumer repo)
 
 1. `npm install` / `npm run build -w cursor-kit` in `cursor-base` (or install `cursor-kit` from that checkout).
-2. In the app repo: `cursor-kit init-project --project .` then `cursor-kit link --shared <cursor-base> --project .` (use `--dry-run` first if you want).
+2. In the app repo: `cursor-kit init-project --project .` then one of:
+   - symlink mode (default): `cursor-kit link --shared <cursor-base> --project .`
+   - copy mode: `cursor-kit link --shared <cursor-base> --project . --mode copy`
+   - public copy mode: `cursor-kit link --project . --mode copy --source public`
 3. `cursor-kit doctor --project .` — resolve **errors**.
-4. In Cursor: **`/adopt-repo-docs`** (optional if you maintain `docs/ai` yourself) — then **`/adopt-design-system`** if you ship a UI.
-5. In Cursor: **`/adopt-cloud-env`** only if you use **Cursor Cloud agents** and want `.cursor/environment.json` prepared.
-6. Commit tracked files; never commit secrets in `mcp.json` or `.cursor/environment.json`.
+4. For copy mode when you want upstream changes: `cursor-kit update --project . [--source public]`.
+5. In Cursor: **`/adopt-repo-docs`** (optional if you maintain `docs/ai` yourself) — then **`/adopt-design-system`** if you ship a UI.
+6. In Cursor: **`/adopt-cloud-env`** only if you use **Cursor Cloud agents** and want `.cursor/environment.json` prepared.
+7. Commit tracked files; never commit secrets in `mcp.json` or `.cursor/environment.json`.
 
 ## Terminal output
 
@@ -154,8 +186,9 @@ The CLI prints structured sections, tables, and light status icons. Disable styl
 - **No recursive deletes** of arbitrary project directories.
 - **`unlink` only removes** entries that are:
   - listed in the managed manifest, and
-  - symlinks that still resolve to the expected shared target
-- **`link` does not replace** real files/directories with symlinks.
+  - in symlink mode: symlinks that still resolve to the expected shared target
+  - in copy mode: copied entries (modified copies skipped by default unless forced)
+- **`link` does not replace** unmanaged real files/directories.
 - **`--dry-run`** performs planning only (no symlink creation, no manifest writes).
 
 ## Limitations (MVP)
