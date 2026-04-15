@@ -2,7 +2,7 @@
   "name": "cursor-kit",
   "version": "0.1.0",
   "private": true,
-  "description": "Internal CLI to link shared .cursor toolkit into project repositories (cursor-base)",
+  "description": "Internal CLI to copy the shared .cursor toolkit into project repositories (cursor-base)",
   "type": "module",
   "bin": {
     "cursor-kit": "./dist/cli.js"

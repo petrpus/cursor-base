@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { runDoctor } from "../src/core/doctor-engine.js";
-import { runLinkEngine } from "../src/core/link-engine.js";
+import { runSyncEngine } from "../src/core/sync-engine.js";
 import { installFakeGitClone, makeTempDir, rmrf, writeMinimalShared } from "./helpers.js";
 
 describe("runDoctor", () => {
@@ -33,15 +33,14 @@ describe("runDoctor", () => {
     expect(res.rows.some((r) => r.check === "project .cursor" && r.severity === "error")).toBe(true);
   });
 
-  it("reports valid setup after link", async () => {
-    await runLinkEngine({
+  it("reports valid setup after init sync", async () => {
+    await runSyncEngine({
       projectRoot: project,
       sharedRoot: shared,
       includeLocal: false,
       dryRun: false,
       force: false,
-      mode: "symlink",
-      refreshManagedCopy: false,
+      forceContent: false,
       sourceKind: "local",
     });
     await writeFile(join(project, ".cursor", "environment.json"), "{}", "utf8");
@@ -75,18 +74,17 @@ describe("runDoctor", () => {
     expect(res.rows.some((r) => r.check === "split layout")).toBe(true);
   });
 
-  it("warns when copied content drifts from managed digest", async () => {
-    await runLinkEngine({
+  it("warns when copied content drifts from per-file manifest", async () => {
+    await runSyncEngine({
       projectRoot: project,
       sharedRoot: shared,
       includeLocal: false,
       dryRun: false,
       force: false,
-      mode: "copy",
-      refreshManagedCopy: false,
+      forceContent: false,
       sourceKind: "local",
     });
-    await writeFile(join(project, ".cursor", "agents", "local-change.txt"), "x", "utf8");
+    await writeFile(join(project, ".cursor", "agents", ".keep"), "changed", "utf8");
 
     const res = await runDoctor({
       projectRoot: project,
@@ -97,23 +95,22 @@ describe("runDoctor", () => {
     expect(
       res.rows.some(
         (r) =>
-          r.check === "link:agents" &&
+          r.check === "kit:agents" &&
           r.severity === "warn" &&
-          r.detail.includes("copy digest differs"),
+          r.detail.includes("managed file(s) differ from manifest"),
       ),
     ).toBe(true);
   });
 
-  it("supports doctor for projects linked from public source", async () => {
+  it("supports doctor for projects installed from public source", async () => {
     restorePath = await installFakeGitClone(shared);
-    await runLinkEngine({
+    await runSyncEngine({
       projectRoot: project,
       sharedRoot: shared,
       includeLocal: false,
       dryRun: false,
       force: false,
-      mode: "copy",
-      refreshManagedCopy: false,
+      forceContent: false,
       sourceKind: "public",
       sourceRepo: "cursor-sh/cursor-base",
       sourceRef: "main",

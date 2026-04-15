@@ -2,9 +2,10 @@ import { mkdir, readlink, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { runLinkEngine } from "../src/core/link-engine.js";
+import { MANAGED_MANIFEST_RELATIVE } from "../src/constants.js";
 import { pathExists } from "../src/core/fs-utils.js";
 import { readManifest } from "../src/core/manifest.js";
+import { runSyncEngine } from "../src/core/sync-engine.js";
 import { runUnlinkEngine } from "../src/core/unlink-engine.js";
 import { makeTempDir, rmrf, writeMinimalShared } from "./helpers.js";
 
@@ -23,15 +24,14 @@ describe("runUnlinkEngine", () => {
     await rmrf(project);
   });
 
-  it("removes only managed symlinks", async () => {
-    await runLinkEngine({
+  it("removes only managed copies", async () => {
+    await runSyncEngine({
       projectRoot: project,
       sharedRoot: shared,
       includeLocal: false,
       dryRun: false,
       force: false,
-      mode: "symlink",
-      refreshManagedCopy: false,
+      forceContent: false,
       sourceKind: "local",
     });
     const local = join(project, ".cursor", "mcp.json");
@@ -50,14 +50,13 @@ describe("runUnlinkEngine", () => {
   });
 
   it("dry-run does not mutate filesystem", async () => {
-    await runLinkEngine({
+    await runSyncEngine({
       projectRoot: project,
       sharedRoot: shared,
       includeLocal: false,
       dryRun: false,
       force: false,
-      mode: "symlink",
-      refreshManagedCopy: false,
+      forceContent: false,
       sourceKind: "local",
     });
     const res = await runUnlinkEngine({
@@ -72,22 +71,24 @@ describe("runUnlinkEngine", () => {
   });
 
   it("skips symlink that does not match manifest shared root", async () => {
-    await runLinkEngine({
-      projectRoot: project,
-      sharedRoot: shared,
-      includeLocal: false,
-      dryRun: false,
-      force: false,
-      mode: "symlink",
-      refreshManagedCopy: false,
-      sourceKind: "local",
-    });
-    const agents = join(project, ".cursor", "agents");
     await mkdir(join(project, ".cursor"), { recursive: true });
-    // replace with wrong symlink manually (unlink validates against manifest.sharedRoot)
-    const { rm } = await import("node:fs/promises");
-    await rm(agents);
+    const agents = join(project, ".cursor", "agents");
     await symlink("/tmp/other", agents);
+    await writeFile(
+      join(project, ".cursor", MANAGED_MANIFEST_RELATIVE),
+      JSON.stringify(
+        {
+          version: 2,
+          cliVersion: "test",
+          mode: "symlink",
+          source: { kind: "local", sharedRoot: shared },
+          managed: [{ path: "agents", kind: "dir", mode: "symlink", sourcePath: "agents" }],
+        },
+        null,
+        2,
+      ) + "\n",
+      "utf8",
+    );
 
     const res = await runUnlinkEngine({
       projectRoot: project,
@@ -102,17 +103,16 @@ describe("runUnlinkEngine", () => {
   });
 
   it("skips modified managed copies by default", async () => {
-    await runLinkEngine({
+    await runSyncEngine({
       projectRoot: project,
       sharedRoot: shared,
       includeLocal: false,
       dryRun: false,
       force: false,
-      mode: "copy",
-      refreshManagedCopy: false,
+      forceContent: false,
       sourceKind: "local",
     });
-    await writeFile(join(project, ".cursor", "agents", "local-change.txt"), "x", "utf8");
+    await writeFile(join(project, ".cursor", "agents", ".keep"), "MODIFIED", "utf8");
     const res = await runUnlinkEngine({
       projectRoot: project,
       dryRun: false,
@@ -125,17 +125,16 @@ describe("runUnlinkEngine", () => {
   });
 
   it("removes modified managed copies with force variant", async () => {
-    await runLinkEngine({
+    await runSyncEngine({
       projectRoot: project,
       sharedRoot: shared,
       includeLocal: false,
       dryRun: false,
       force: false,
-      mode: "copy",
-      refreshManagedCopy: false,
+      forceContent: false,
       sourceKind: "local",
     });
-    await writeFile(join(project, ".cursor", "agents", "local-change.txt"), "x", "utf8");
+    await writeFile(join(project, ".cursor", "agents", ".keep"), "MODIFIED", "utf8");
     const res = await runUnlinkEngine({
       projectRoot: project,
       dryRun: false,
@@ -147,17 +146,16 @@ describe("runUnlinkEngine", () => {
   });
 
   it("retains manifest when modified copy entries are skipped", async () => {
-    await runLinkEngine({
+    await runSyncEngine({
       projectRoot: project,
       sharedRoot: shared,
       includeLocal: false,
       dryRun: false,
       force: false,
-      mode: "copy",
-      refreshManagedCopy: false,
+      forceContent: false,
       sourceKind: "local",
     });
-    await writeFile(join(project, ".cursor", "agents", "local-change.txt"), "x", "utf8");
+    await writeFile(join(project, ".cursor", "agents", ".keep"), "MODIFIED", "utf8");
     const res = await runUnlinkEngine({
       projectRoot: project,
       dryRun: false,

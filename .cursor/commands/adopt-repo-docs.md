@@ -1,12 +1,12 @@
 # /adopt-repo-docs
 
-Bootstrap or refresh **project-local** documentation so agents can adopt this repository: **`docs/ai/`**, root **`AGENTS.md`**, and optional product/design notes. Use after **`cursor-kit init-project`**, **`cursor-kit link`**, and a clean **`cursor-kit doctor`** (filesystem layout must already be correct).
+Bootstrap or refresh **project-local** documentation so agents can adopt this repository: **`docs/ai/`**, root **`AGENTS.md`**, and optional product/design notes. Use after **`cursor-kit init`** and a clean **`cursor-kit doctor`** (filesystem layout must already be correct).
 
-This command is **not** a substitute for `cursor-kit`: it does not create symlinks or manage `.cursor/.cursor-kit-managed.json`.
+This command is **not** a substitute for `cursor-kit`: it does not copy the shared kit or manage `.cursor/.cursor-kit-managed.json`.
 
 ## Prerequisites
 
-1. **Split layout in place:** `project/.cursor/` is a real directory; shared entries are symlinked per `docs/dev/cursor-kit.md` in the **cursor-base** checkout (or the portable `.cursor/docs/cursor-kit-adoption.md` when linked into your project).
+1. **Split layout in place:** `project/.cursor/` is a real directory; shared kit is installed with **`cursor-kit init`** per `docs/dev/cursor-kit.md` in the **cursor-base** checkout (or the portable `.cursor/docs/cursor-kit-adoption.md` when copied into your project).
 2. **Mandatory reads for the agent** (before writing):
    - `.cursor/context/repo-adoption-instruction.md`
    - `.cursor/context/project-docs-contract.md`

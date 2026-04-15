@@ -1,9 +1,10 @@
 import { rm } from "node:fs/promises";
 import { join } from "node:path";
 
-import { manifestPath, readManifest, writeManifest } from "./manifest.js";
+import { MANIFEST_VERSION, manifestPath, readManifest, writeManifest } from "./manifest.js";
+import type { ManagedManifest } from "./manifest.js";
 import { isSymlink, pathExists, symlinkPointsToRealpath } from "./fs-utils.js";
-import { digestPath } from "./copy-utils.js";
+import { digestFileContent, digestPath } from "./copy-utils.js";
 import { updateCopyModeGitIgnore } from "./copy-gitignore.js";
 
 export type UnlinkRow = {
@@ -31,6 +32,32 @@ export type UnlinkEngineInput = {
   forceWithoutManifest: boolean;
   forceRemoveModifiedCopy: boolean;
 };
+
+function destPathForInstalledFile(projectRoot: string, root: string, rel: string): string {
+  if (rel === "") {
+    return join(projectRoot, ".cursor", root);
+  }
+  return join(projectRoot, ".cursor", root, ...rel.split("/"));
+}
+
+async function v3CopyHasDivergence(
+  projectRoot: string,
+  manifest: ManagedManifest & { files: NonNullable<ManagedManifest["files"]> },
+  rootPath: string,
+): Promise<boolean> {
+  const records = manifest.files.filter((f) => f.root === rootPath);
+  for (const f of records) {
+    const p = destPathForInstalledFile(projectRoot, f.root, f.rel);
+    if (!(await pathExists(p))) {
+      return true;
+    }
+    const h = await digestFileContent(p);
+    if (h !== f.hash) {
+      return true;
+    }
+  }
+  return false;
+}
 
 export async function runUnlinkEngine(input: UnlinkEngineInput): Promise<UnlinkEngineResult> {
   const manifest = await readManifest(input.projectRoot);
@@ -66,7 +93,23 @@ export async function runUnlinkEngine(input: UnlinkEngineInput): Promise<UnlinkE
       continue;
     }
     if (entry.mode === "copy") {
-      if (entry.digest && !input.forceRemoveModifiedCopy) {
+      if (manifest.version === MANIFEST_VERSION && manifest.files && manifest.files.length > 0) {
+        if (!input.forceRemoveModifiedCopy) {
+          const diverged = await v3CopyHasDivergence(
+            input.projectRoot,
+            manifest as ManagedManifest & { files: NonNullable<ManagedManifest["files"]> },
+            entry.path,
+          );
+          if (diverged) {
+            rows.push({
+              name: entry.path,
+              status: "skipped_modified_copy",
+              detail: "copy differs from per-file manifest; use --force-remove-modified-copy",
+            });
+            continue;
+          }
+        }
+      } else if (entry.digest && !input.forceRemoveModifiedCopy) {
         let currentDigest: string | undefined;
         try {
           currentDigest = await digestPath(dest);
@@ -126,10 +169,19 @@ export async function runUnlinkEngine(input: UnlinkEngineInput): Promise<UnlinkE
       if (remainingManaged.length === 0) {
         await rm(manifestPath(input.projectRoot));
       } else {
-        const mode = remainingManaged.some((entry) => entry.mode === "copy") ? "copy" : "symlink";
-        await writeManifest(input.projectRoot, { ...manifest, mode, managed: remainingManaged });
+        const mode = remainingManaged.some((e) => e.mode === "copy") ? "copy" : "symlink";
+        const nextFiles =
+          manifest.version === MANIFEST_VERSION && manifest.files
+            ? manifest.files.filter((f) => remainingManaged.some((m) => m.path === f.root))
+            : manifest.files;
+        await writeManifest(input.projectRoot, {
+          ...manifest,
+          mode,
+          managed: remainingManaged,
+          files: nextFiles,
+        });
       }
-      const remainingCopyEntries = remainingManaged.filter((entry) => entry.mode === "copy").map((entry) => entry.path);
+      const remainingCopyEntries = remainingManaged.filter((e) => e.mode === "copy").map((e) => e.path);
       await updateCopyModeGitIgnore({
         projectRoot: input.projectRoot,
         mode: remainingCopyEntries.length > 0 ? "copy" : "symlink",
