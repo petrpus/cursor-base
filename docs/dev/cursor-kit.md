@@ -23,7 +23,7 @@ Portable copy (this page also lives under `.cursor/docs/` so it ships with the k
 
 Use this order so filesystem layout is correct before agents author **`docs/ai/`** content.
 
-1. **Toolchain:** Node.js 20+, `cursor-kit` installed or built from `cursor-base` (see package README).
+1. **Toolchain:** Node.js 20+, `cursor-kit` from npm (`npm install -g cursor-kit` / `npx cursor-kit`), or built from this `cursor-base` workspace (see [`packages/cursor-kit/README.md`](../../packages/cursor-kit/README.md)).
 2. **Install kit + scaffold locals:** `cursor-kit init --shared <path-to-cursor-base> --project <repo>` (use `--dry-run` first if you prefer).  
    - For public source on branch `main`: add `--source public`.  
    - `--source auto` first attempts local discovery and falls back to public `main` only when local resolution fails.

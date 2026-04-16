@@ -1,14 +1,32 @@
 {
   "name": "cursor-kit",
   "version": "0.2.0",
-  "private": true,
-  "description": "Internal CLI to copy the shared .cursor toolkit into project repositories (cursor-base)",
+  "description": "CLI to copy the shared Cursor toolkit from cursor-base into your project repository",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cursor-sh/cursor-base.git",
+    "directory": "packages/cursor-kit"
+  },
+  "bugs": {
+    "url": "https://github.com/cursor-sh/cursor-base/issues"
+  },
+  "homepage": "https://github.com/cursor-sh/cursor-base/tree/main/packages/cursor-kit#readme",
+  "keywords": [
+    "cursor",
+    "cursor-editor",
+    "cli",
+    "toolkit",
+    "dotcursor"
+  ],
   "bin": {
-    "cursor-kit": "./dist/cli.js"
+    "cursor-kit": "dist/cli.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

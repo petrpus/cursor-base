@@ -1,6 +1,6 @@
 # cursor-kit
 
-Internal CLI for adopting the **shared Cursor toolkit** from the `cursor-base` repository into individual project repositories.
+CLI for adopting the **shared Cursor toolkit** from the `cursor-base` repository into individual project repositories.
 
 ## Why this exists
 
@@ -21,6 +21,21 @@ This package automates that layout with explicit safety rules.
 
 - Linux-friendly paths (also works on macOS in most setups)
 - Node.js **20+**
+
+## Install from npm
+
+When [cursor-kit](https://www.npmjs.com/package/cursor-kit) is published:
+
+```bash
+npm install -g cursor-kit
+cursor-kit --help
+```
+
+Or run without a global install:
+
+```bash
+npx --yes cursor-kit doctor --project .
+```
 
 ## Installation in this workspace
 
@@ -177,3 +192,38 @@ Examples reserved for later versions:
 - `refresh-cloud-env`
 
 Keep the core engines (`src/core/`) small and composable so new commands can reuse the same filesystem utilities and UI layer.
+
+## Publishing to npm (maintainers)
+
+Publishing is automated with **GitHub Actions** when you push an annotated or lightweight tag whose name matches the package version.
+
+### One-time setup
+
+1. Create an npm account and [enable 2FA](https://docs.npmjs.com/configuring-two-factor-authentication) if required by npm policy.
+2. Under npm **Access Tokens**, create an **Automation** (classic) or **Granular** token with permission to publish this package.
+3. In the GitHub repo **Settings → Secrets and variables → Actions**, add **`NPM_TOKEN`** with that token value. Never commit tokens.
+
+### Release checklist
+
+1. On `main` (or your release branch), set **`version`** in `packages/cursor-kit/package.json` to the new semver (for example `0.3.0`).
+2. Commit the version bump (and changelog or README tweaks if any).
+3. Create and push a tag **`cursor-kit-v`** plus the same version, for example:
+
+   ```bash
+   git tag cursor-kit-v0.3.0
+   git push origin cursor-kit-v0.3.0
+   ```
+
+   The workflow checks that the tag suffix after `cursor-kit-v` **exactly equals** the `version` field in `package.json`.
+
+4. Watch **Actions → Publish cursor-kit to npm**; on success the new version appears on the npm registry.
+
+### Manual publish (local)
+
+From the monorepo root, after `npm ci` and `npm run build -w cursor-kit`:
+
+```bash
+npm publish -w cursor-kit
+```
+
+Use an npm login or `NPM_TOKEN` in the environment as documented by npm. Prefer the tag-based GitHub flow so publishes are auditable and repeatable.
