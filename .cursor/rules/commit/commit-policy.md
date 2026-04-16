@@ -12,7 +12,8 @@ When the runtime explicitly requires autonomous delivery (for example cloud-task
 
 ## Universal requirements
 
-- Always consult `commit-agent` before recommending final commit boundaries for non-trivial tasks.
+- Always delegate to **`commit-agent`** before **any** git operation that mutates repository state or history. That includes staging strategy, `commit`, `commit --amend`, `rebase`, `merge`, `cherry-pick`, `reset` that moves `HEAD`, and `push`. Read-only commands (`status`, `diff`, `log`, `show`, `branch` listing) do not require `commit-agent`.
+- Execute mutating git commands only per the `commit-agent` plan (boundaries, messages, and prepare-only vs allowed writes for this runtime).
 - Commit recommendations must:
   - follow verification,
   - avoid mixed concerns when practical,

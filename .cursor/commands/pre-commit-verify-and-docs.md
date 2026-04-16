@@ -19,8 +19,7 @@ Run this command to verify changes, update documentation, and prepare/apply clea
 3. **Prepare commit boundaries and messages**
    - Inspect all changes (verification fixes, doc updates, and original edits).
    - If changes fall into **logically or functionally separate** groups, propose **multiple commits** (e.g. one for feature/fix, one for docs, one for tests). Otherwise propose a single commit.
-   - Use the **commit-agent** subagent to propose **commit boundaries and messages**.
-   - If the commit-agent is not used, propose clear, conventional commit messages yourself.
+   - Always use the **commit-agent** subagent before any mutating git operation or before presenting a commit/staging plan that implies one — per `.cursor/rules/commit/commit-policy.md` (boundaries, messages, prepare-only vs allowed writes).
 
 4. **Apply commits only when mode allows**
    - **Interactive mode (default):** do not run `git add`/`git commit`; present proposed commit plan for user approval and application.

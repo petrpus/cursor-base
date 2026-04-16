@@ -17,7 +17,7 @@ When instructions conflict, follow `.cursor/rules/01-policy-precedence.mdc`.
 7. implement using the agreed approach (single-writer default per phase)
 8. run `change-verifier` before preparing commit(s)
 9. run `compliance-verifier` for L4 or policy-sensitive changes
-10. consult `commit-agent` to prepare final commit boundaries and messages according to `.cursor/rules/commit/commit-policy.md`
+10. delegate to `commit-agent` before **any** mutating git operation (not only the final commit): staging strategy, boundaries, messages, and prepare-only vs allowed writes per `.cursor/rules/commit/commit-policy.md`
 
 ## Mandatory specialist routing
 - shared UI components, tokens, styling rules, component variants -> `design-system-agent` or `design-system-guardian`
@@ -39,5 +39,6 @@ When instructions conflict, follow `.cursor/rules/01-policy-precedence.mdc`.
 - L4: `compliance-verifier` is a mandatory blocking gate.
 - do not skip a matching specialist for convenience.
 - do not recommend a commit before verification.
+- do not recommend or run mutating git operations before `commit-agent` (per commit policy) and verification where policy requires it.
 - follow `.cursor/rules/commit/commit-policy.md` for whether commit operations are prepare-only or allowed in this environment.
 - include delegation transparency closeout fields required by `.cursor/rules/orchestration/delegation-transparency.mdc`.

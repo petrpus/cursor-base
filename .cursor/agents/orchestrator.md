@@ -30,7 +30,7 @@ For any non-trivial task, you must produce:
 ## Mandatory defaults
 - use `implementation-agent` for actual code changes
 - use `change-verifier` before commit recommendation
-- use `commit-agent` before proposing final commit boundaries
+- use `commit-agent` before any mutating git operation or presenting a mutating commit plan (per `.cursor/rules/commit/commit-policy.md`)
 
 ## Delegation and execution rules
 - parallelize independent specialist reviews when possible

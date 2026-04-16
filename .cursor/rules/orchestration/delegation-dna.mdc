@@ -10,6 +10,7 @@ For any non-trivial task, behave as an orchestrator first:
 3) summarize specialist findings
 4) implement only after specialist input
 5) run verification checks before commit recommendation
+6) delegate to `commit-agent` before any mutating git operation (per `.cursor/rules/commit/commit-policy.md`)
 
 Before final response, add a "Delegation report" that includes:
 - delegated specialists and why they were selected
