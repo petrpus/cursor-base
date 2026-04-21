@@ -8,37 +8,66 @@ For any non-trivial task, the built-in Agent must act as an orchestrator first a
 When instructions conflict, follow `.cursor/rules/01-policy-precedence.mdc`.
 
 ## Required workflow
-1. identify affected areas by task intent and touched files
-2. assign risk tier using `.cursor/rules/orchestration/risk-tiering.mdc` (L1-L4, highest-tier-wins)
-3. adopt repository state first when the area is unfamiliar, architecture-sensitive, or design-system-sensitive — use docs/ai as the primary project context
-4. make a short plan with specialist matrix and budget envelope
-5. explicitly delegate to matching specialist subagents before implementation (parallelize independent reviews per `.cursor/rules/orchestration/parallel-delegation.mdc`)
-6. summarize specialist findings and resolve conflicts
-7. implement using the agreed approach (single-writer default per phase)
-8. run `change-verifier` before preparing commit(s)
-9. run `compliance-verifier` for L4 or policy-sensitive changes
-10. delegate to `commit-agent` before **any** mutating git operation (not only the final commit): staging strategy, boundaries, messages, and prepare-only vs allowed writes per `.cursor/rules/commit/commit-policy.md`
+
+1. Identify affected areas by task intent and touched files.
+2. Assign risk tier using `.cursor/rules/orchestration/risk-tiering.mdc` (L1–L4, highest-tier-wins).
+3. Adopt repository state first when the area is unfamiliar, architecture-sensitive, or design-system-sensitive — use `docs/ai` as the primary project context.
+4. Make a short plan with specialist matrix and budget envelope.
+5. Run relevant inline skill checks before delegating (see `.cursor/context/skill-composition-guide.md`); pass findings as context to agents.
+6. Explicitly delegate to matching specialist subagents; parallelize independent reviews (see **Parallel delegation** below).
+7. Summarize specialist findings and resolve conflicts.
+8. Implement using the agreed approach (single-writer default per phase).
+9. Run `change-verifier` before preparing commit(s).
+10. Run `compliance-verifier` for L4 or policy-sensitive changes.
+11. Delegate to `commit-agent` before **any** mutating git operation: staging strategy, boundaries, messages, and prepare-only vs allowed writes per `.cursor/rules/commit/commit-policy.md`.
+12. Include a structured closeout in the final response (see **Closeout requirements** below).
 
 ## Mandatory specialist routing
-- shared UI components, tokens, styling rules, component variants -> `design-system-agent` or `design-system-guardian`
-- route modules, pages, forms, tables, admin UX, layout composition -> `frontend-architecture-agent`
-- accessibility, keyboard flow, responsive behavior, error/empty/loading states -> `ux-accessibility-agent` or `responsive-accessibility-auditor`
-- routes, loaders, actions, auth, uploads, secrets, sensitive operations -> `security-agent`
-- behavior changes, regressions, new features, bug fixes -> `testing-agent`
-- schemas, DTOs, input/output validation, contract changes -> `api-contract-agent`
-- Prisma schema, migrations, query shape, indexing, transactions -> `database-agent`
-- logging, tracing, auditability, jobs, background processing -> `observability-agent`
-- domain-critical business rules -> `domain-agent`
-- large cleanup or simplification work -> `refactor-agent`
-- local runtime operations or diagnosis -> `dev-runtime`
-- documentation updates, API docs, READMEs, `docs/`, doc organization or interlinking -> `docs-agent`
+
+- shared UI components, tokens, styling rules, component variants → `design-system-agent` or `design-system-guardian`
+- route modules, pages, forms, tables, admin UX, layout composition → `frontend-architecture-agent`
+- accessibility, keyboard flow, responsive behavior, error/empty/loading states → `ux-accessibility-agent` or `responsive-accessibility-auditor`
+- routes, loaders, actions, auth, uploads, secrets, sensitive operations → `security-agent`
+- behavior changes, regressions, new features, bug fixes → `testing-agent`
+- schemas, DTOs, input/output validation, contract changes → `api-contract-agent`
+- Prisma schema, migrations, query shape, indexing, transactions → `database-agent`
+- queue jobs, background processing, retry strategy, DLQ → `jobs-agent`
+- logging, tracing, auditability → `observability-agent`
+- domain-critical business rules → `domain-agent`
+- large cleanup or simplification work → `refactor-agent`
+- local runtime operations or diagnosis → `dev-runtime`
+- documentation updates, READMEs, `docs/` organization → `docs-agent`
+
+## Parallel delegation
+
+Parallelize only independent specialties with non-overlapping write ownership in the same batch.
+Prefer review/findings phases in parallel; converge to a single implementation writer by default.
+Resolve security-sensitive recommendation conflicts before implementation proceeds.
+Do not exceed the declared budget envelope without explicit rationale in closeout.
+If an unresolved high-severity conflict remains after synthesis, halt and report instead of forcing implementation.
 
 ## Hard enforcement rules
+
 - L2+: do not finalize without required specialist delegation and outputs.
 - L3/L4: required specialist outputs are blocking gates.
 - L4: `compliance-verifier` is a mandatory blocking gate.
-- do not skip a matching specialist for convenience.
-- do not recommend a commit before verification.
-- do not recommend or run mutating git operations before `commit-agent` (per commit policy) and verification where policy requires it.
-- follow `.cursor/rules/commit/commit-policy.md` for whether commit operations are prepare-only or allowed in this environment.
-- include delegation transparency closeout fields required by `.cursor/rules/orchestration/delegation-transparency.mdc`.
+- Do not skip a matching specialist for convenience.
+- Do not recommend a commit before verification.
+- Do not recommend or run mutating git operations before `commit-agent` (per commit policy) and verification where policy requires it.
+
+## Closeout requirements
+
+Every non-trivial task final response must include a structured closeout:
+
+- **Task summary** — `task_id`, risk tier, change type, acceptance criteria status.
+- **Delegation ledger** — who was delegated, why, outcome used/rejected.
+- **Skipped specialist rationale** — compensating controls for any skipped required specialist.
+- **Conflicts and resolution decisions** — how specialist disagreements were resolved.
+- **Verification evidence** — commands run and outcomes.
+- **Residual risk** — explicit statement or "none" with rationale.
+- **Budget summary** — tokens/cost/time when available.
+- **Follow-up items** — open questions, deferred work.
+
+Temporary governance artifacts, plans, and working notes must be kept under `tmp/`.
+Do not delegate only for optics; every delegation must have expected value.
+For high-risk tasks, unresolved specialist conflicts must block finalization.

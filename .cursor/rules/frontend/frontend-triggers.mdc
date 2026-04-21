@@ -1,6 +1,6 @@
 ---
 description: Enforce frontend specialist delegation for UI work
-alwaysApply: true
+alwaysApply: false
 globs:
   - "**/*.{tsx,jsx,css,scss}"
   - "**/components/**"

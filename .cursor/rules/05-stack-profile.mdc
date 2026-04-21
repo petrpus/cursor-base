@@ -1,8 +1,0 @@
----
-description: Stack profile
-alwaysApply: true
----
-
-Default stack assumptions for this repository are documented in `.cursor/context/stack-profile.md` and `.cursor/context/stack.md`.
-Prefer patterns aligned with React Router, TypeScript, Prisma, PostgreSQL, Zod, React Hook Form, Tailwind, Vitest, Playwright, S3-compatible storage, and BullMQ.
-Avoid introducing patterns that fight the existing stack unless the task explicitly calls for it.
