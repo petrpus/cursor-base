@@ -112,3 +112,62 @@ What init-project does (deprecated alias)
 Examples
   cursor-kit init-project --project . --dry-run
 `;
+
+export const HELP_AFTER_DIFF = `
+What diff does
+  Reads the managed manifest and compares each recorded file hash to what is on disk.
+  Reports whether each file is unchanged, modified locally, missing, or ejected.
+
+Exit code
+  0 when all managed files are unchanged or ejected.
+  1 when any file is modified locally or missing on disk.
+  2 on fatal errors (no manifest, I/O failure).
+
+Examples
+  cursor-kit diff --project .
+  cursor-kit diff --project ~/Code/my-app
+`;
+
+export const HELP_AFTER_AUDIT = `
+What audit does
+  Indexes agents/, skills/, and commands/ directories under .cursor/, then scans rules/**/*.mdc
+  and agents/*.md for backtick-wrapped names ending in \`-agent\` or \`-skill\`.
+  Reports broken references (no matching file) as errors, extra or duplicate definitions as warnings.
+
+Exit code
+  0 when all references resolve correctly (warnings are still exit 0).
+  1 when any broken reference is found.
+  2 on fatal errors (missing .cursor directory, I/O failure).
+
+Examples
+  cursor-kit audit --project .
+  cursor-kit audit --project ~/Code/my-app
+`;
+
+export const HELP_AFTER_EJECT = `
+What eject does
+  Marks one or more managed manifest entries as locally owned (ejected: true).
+  cursor-kit update will skip ejected entries on future runs.
+  To re-adopt an ejected path, run cursor-kit update --force.
+
+Arguments
+  <paths...>   One or more managed root names (e.g. agents rules) or relative paths from .cursor/.
+
+Examples
+  cursor-kit eject agents
+  cursor-kit eject rules/custom.mdc agents --project .
+  cursor-kit eject agents --dry-run
+`;
+
+export const HELP_AFTER_PROPOSE_UPSTREAM = `
+What propose-upstream does
+  Runs diff internally to find locally modified managed files, then writes a structured
+  proposal document to tmp/upstream-proposals/<date>-<slug>.md with the description,
+  changed file list, and a PR body template ready to copy.
+
+  After reviewing the proposal, open a pull request against cursor-base with your local changes.
+
+Examples
+  cursor-kit propose-upstream --description "improve security-review-skill steps"
+  cursor-kit propose-upstream --description "add jobs-agent" --project ~/Code/my-app
+`;

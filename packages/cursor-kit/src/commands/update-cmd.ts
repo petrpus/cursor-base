@@ -14,6 +14,7 @@ export type UpdateCliOpts = {
   source: SharedSourceKind;
   sharedSourceKind: ResolveSharedInput["sourceKind"];
   sourceRepo?: string;
+  branch?: string;
 };
 
 export async function runUpdateCommand(ui: Ui, opts: UpdateCliOpts): Promise<number> {
@@ -43,6 +44,7 @@ export async function runUpdateCommand(ui: Ui, opts: UpdateCliOpts): Promise<num
     projectDir: opts.project,
     sourceKind: opts.sharedSourceKind,
     sourceRepo: opts.sourceRepo ?? manifest.source.repo,
+    branch: opts.branch ?? manifest.source.ref,
   });
   if (!sharedRes.ok) {
     ui.error(sharedRes.reason);

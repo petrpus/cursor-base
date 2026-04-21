@@ -14,6 +14,7 @@ export type InitCliOpts = {
   source: SharedSourceKind;
   sharedSourceKind: ResolveSharedInput["sourceKind"];
   sourceRepo?: string;
+  branch?: string;
 };
 
 export async function runInitCommand(ui: Ui, opts: InitCliOpts): Promise<number> {
@@ -31,6 +32,7 @@ export async function runInitCommand(ui: Ui, opts: InitCliOpts): Promise<number>
     projectDir: opts.project,
     sourceKind: opts.sharedSourceKind,
     sourceRepo: opts.sourceRepo,
+    branch: opts.branch,
   });
   if (!sharedRes.ok) {
     ui.error(sharedRes.reason);

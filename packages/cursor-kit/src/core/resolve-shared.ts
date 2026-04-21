@@ -76,6 +76,8 @@ export type ResolveSharedInput = {
   projectDir: string;
   sourceKind: SharedSourceKind | "local-or-public";
   sourceRepo?: string;
+  /** Branch to use when cloning from GitHub. Defaults to PUBLIC_CURSOR_BASE_BRANCH ("main"). */
+  branch?: string;
 };
 
 export type ResolveSharedResult =
@@ -89,17 +91,17 @@ export type ResolveSharedResult =
     }
   | { ok: false; reason: string };
 
-async function resolveSharedFromPublicRepo(repo: string): Promise<ResolveSharedResult> {
+async function resolveSharedFromPublicRepo(repo: string, branch: string = PUBLIC_CURSOR_BASE_BRANCH): Promise<ResolveSharedResult> {
   const tmpRoot = await mkdtemp(join(tmpdir(), "cursor-kit-public-"));
   const targetRepo = `https://github.com/${repo}.git`;
   try {
-    await execFileAsync("git", ["clone", "--depth", "1", "--branch", PUBLIC_CURSOR_BASE_BRANCH, targetRepo, tmpRoot], {
+    await execFileAsync("git", ["clone", "--depth", "1", "--branch", branch, targetRepo, tmpRoot], {
       timeout: 180000,
     });
   } catch (error) {
     await rm(tmpRoot, { recursive: true, force: true });
     const message = error instanceof Error ? error.message : String(error);
-    return { ok: false, reason: `Failed to clone public source (${repo}@${PUBLIC_CURSOR_BASE_BRANCH}): ${message}` };
+    return { ok: false, reason: `Failed to clone public source (${repo}@${branch}): ${message}` };
   }
 
   const sharedDir = join(tmpRoot, ".cursor");
@@ -117,14 +119,14 @@ async function resolveSharedFromPublicRepo(repo: string): Promise<ResolveSharedR
     source: "public",
     sourceKind: "public",
     sourceRepo: repo,
-    sourceRef: PUBLIC_CURSOR_BASE_BRANCH,
+    sourceRef: branch,
   };
 }
 
 export async function resolveSharedCursorDir(input: ResolveSharedInput): Promise<ResolveSharedResult> {
   if (input.sourceKind === "public") {
     const repo = input.sourceRepo ?? DEFAULT_PUBLIC_CURSOR_BASE_REPO;
-    return resolveSharedFromPublicRepo(repo);
+    return resolveSharedFromPublicRepo(repo, input.branch);
   }
 
   if (input.explicit) {
@@ -164,7 +166,7 @@ export async function resolveSharedCursorDir(input: ResolveSharedInput): Promise
 
   if (input.sourceKind === "local-or-public") {
     const repo = input.sourceRepo ?? DEFAULT_PUBLIC_CURSOR_BASE_REPO;
-    return resolveSharedFromPublicRepo(repo);
+    return resolveSharedFromPublicRepo(repo, input.branch);
   }
 
   return {

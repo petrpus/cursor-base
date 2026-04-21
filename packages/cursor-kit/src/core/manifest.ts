@@ -24,6 +24,8 @@ export type ManagedEntry = {
   sourcePath: string;
   /** v2 copy-mode tree digest only; unused for v3 (per-file hashes live in `files`). */
   digest?: string;
+  /** When true, cursor-kit update skips this entry; the file is locally owned. */
+  ejected?: true;
 };
 
 export type ManagedSource = {
@@ -78,6 +80,7 @@ function parseManagedEntries(o: Record<string, unknown>): ManagedEntry[] | undef
       mode: entry.mode,
       sourcePath: entry.sourcePath,
       digest: typeof entry.digest === "string" ? entry.digest : undefined,
+      ejected: entry.ejected === true ? true : undefined,
     });
   }
   return managed;

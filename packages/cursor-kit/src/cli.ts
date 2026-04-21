@@ -2,16 +2,24 @@
 import { Command } from "commander";
 
 import {
+  HELP_AFTER_AUDIT,
+  HELP_AFTER_DIFF,
   HELP_AFTER_DOCTOR,
+  HELP_AFTER_EJECT,
   HELP_AFTER_INIT,
   HELP_AFTER_INIT_PROJECT,
-  HELP_AFTER_UPDATE,
+  HELP_AFTER_PROPOSE_UPSTREAM,
   HELP_AFTER_UNLINK,
+  HELP_AFTER_UPDATE,
   HELP_EPILOG_ROOT,
 } from "./cli-help-text.js";
+import { runAuditCommand } from "./commands/audit-cmd.js";
+import { runDiffCommand } from "./commands/diff-cmd.js";
 import { runDoctorCommand } from "./commands/doctor-cmd.js";
+import { runEjectCommand } from "./commands/eject-cmd.js";
 import { runInitCommand } from "./commands/init-cmd.js";
 import { runInitProjectCommand } from "./commands/init-project-cmd.js";
+import { runProposeUpstreamCommand } from "./commands/propose-upstream-cmd.js";
 import { runUnlinkCommand } from "./commands/unlink-cmd.js";
 import { runUpdateCommand } from "./commands/update-cmd.js";
 import type { SharedSourceKind } from "./constants.js";
@@ -42,6 +50,8 @@ type InitKitOpts = NoColorFlag & {
   includeLocal: boolean;
   source: SourceKindOption;
   sourceRepo?: string;
+  repo?: string;
+  branch?: string;
 };
 
 type UnlinkOpts = NoColorFlag & {
@@ -71,6 +81,26 @@ type UpdateOpts = NoColorFlag & {
   includeLocal: boolean;
   source: SourceKindOption;
   sourceRepo?: string;
+  repo?: string;
+  branch?: string;
+};
+
+type DiffOpts = NoColorFlag & {
+  project: string;
+};
+
+type AuditOpts = NoColorFlag & {
+  project: string;
+};
+
+type EjectOpts = NoColorFlag & {
+  project: string;
+  dryRun: boolean;
+};
+
+type ProposeUpstreamOpts = NoColorFlag & {
+  project: string;
+  description: string;
 };
 
 function resolveSourceKind(raw: { source: SourceKindOption }): SharedSourceKind {
@@ -81,6 +111,11 @@ function resolveSharedSourceKind(raw: { source: SourceKindOption }): "local" | "
   if (raw.source === "public") return "public";
   if (raw.source === "local") return "local";
   return "local-or-public";
+}
+
+/** --repo is the user-friendly alias for --source-repo */
+function resolveRepo(raw: { sourceRepo?: string; repo?: string }): string | undefined {
+  return raw.repo ?? raw.sourceRepo;
 }
 
 async function main(): Promise<void> {
@@ -110,21 +145,22 @@ async function main(): Promise<void> {
     .option("--force", "overwrite scaffold targets and replace managed roots / local edits where needed", false)
     .option("--include-local", "include shared `local/` when present", false)
     .option("--source <kind>", "shared source: local (default), public, or auto", "auto")
-    .option("--source-repo <owner/repo>", "public source repository (used with --source public)")
+    .option("--repo <owner/repo>", "GitHub repository to use as shared source (e.g. myorg/cursor-base)")
+    .option("--source-repo <owner/repo>", "alias for --repo (legacy name)")
+    .option("--branch <branch>", "branch to clone when using GitHub source (default: main)")
     .addHelpText("after", `\n${HELP_AFTER_INIT.trim()}\n`)
     .action(async (raw: InitKitOpts) => {
       const ui = mkUi(raw);
-      const resolvedSource = resolveSourceKind(raw);
-      const resolvedSharedSource = resolveSharedSourceKind(raw);
       const code = await runInitCommand(ui, {
         project: raw.project,
         shared: raw.shared,
         dryRun: raw.dryRun,
         force: raw.force,
         includeLocal: raw.includeLocal,
-        source: resolvedSource,
-        sharedSourceKind: resolvedSharedSource,
-        sourceRepo: raw.sourceRepo,
+        source: resolveSourceKind(raw),
+        sharedSourceKind: resolveSharedSourceKind(raw),
+        sourceRepo: resolveRepo(raw),
+        branch: raw.branch,
       });
       process.exitCode = code;
     });
@@ -146,28 +182,86 @@ async function main(): Promise<void> {
     )
     .option("--include-local", "include managed `local/` entry", false)
     .option("--source <kind>", "shared source: local (default), public, or auto", "auto")
-    .option("--source-repo <owner/repo>", "public source repository (used with --source public)")
+    .option("--repo <owner/repo>", "GitHub repository to use as shared source")
+    .option("--source-repo <owner/repo>", "alias for --repo (legacy name)")
+    .option("--branch <branch>", "branch to clone when using GitHub source (default: main or manifest value)")
     .addHelpText("after", `\n${HELP_AFTER_UPDATE.trim()}\n`)
     .action(async (raw: UpdateOpts) => {
       const ui = mkUi(raw);
-      const resolvedSource = resolveSourceKind(raw);
-      const resolvedSharedSource = resolveSharedSourceKind(raw);
       const code = await runUpdateCommand(ui, {
         project: raw.project,
         shared: raw.shared,
         dryRun: raw.dryRun,
         force: raw.force,
         includeLocal: raw.includeLocal,
-        source: resolvedSource,
-        sharedSourceKind: resolvedSharedSource,
-        sourceRepo: raw.sourceRepo,
+        source: resolveSourceKind(raw),
+        sharedSourceKind: resolveSharedSourceKind(raw),
+        sourceRepo: resolveRepo(raw),
+        branch: raw.branch,
       });
       process.exitCode = code;
     });
 
   program
-    .command("unlink")
-    .description("Remove managed entries recorded in .cursor/.cursor-kit-managed.json")
+    .command("diff")
+    .description("Show which managed files have been modified locally since the last sync.")
+    .option("--no-color", "disable colors and prefer ASCII icons", false)
+    .option("--project <path>", "target project root", process.cwd())
+    .addHelpText("after", `\n${HELP_AFTER_DIFF.trim()}\n`)
+    .action(async (raw: DiffOpts) => {
+      const ui = mkUi(raw);
+      const code = await runDiffCommand(ui, { project: raw.project });
+      process.exitCode = code;
+    });
+
+  program
+    .command("audit")
+    .description("Validate internal cross-references: agent names in rules, skill names in agents.")
+    .option("--no-color", "disable colors and prefer ASCII icons", false)
+    .option("--project <path>", "target project root", process.cwd())
+    .addHelpText("after", `\n${HELP_AFTER_AUDIT.trim()}\n`)
+    .action(async (raw: AuditOpts) => {
+      const ui = mkUi(raw);
+      const code = await runAuditCommand(ui, { project: raw.project });
+      process.exitCode = code;
+    });
+
+  program
+    .command("eject <paths...>")
+    .description("Mark managed paths as locally owned so cursor-kit update skips them.")
+    .option("--no-color", "disable colors and prefer ASCII icons", false)
+    .option("--project <path>", "target project root", process.cwd())
+    .option("--dry-run", "print actions without changing manifest", false)
+    .addHelpText("after", `\n${HELP_AFTER_EJECT.trim()}\n`)
+    .action(async (paths: string[], raw: EjectOpts) => {
+      const ui = mkUi(raw);
+      const code = await runEjectCommand(ui, {
+        project: raw.project,
+        dryRun: raw.dryRun,
+        paths,
+      });
+      process.exitCode = code;
+    });
+
+  program
+    .command("propose-upstream")
+    .description("Draft an upstream PR proposal for locally modified managed files.")
+    .requiredOption("--description <text>", "short description of the improvement")
+    .option("--no-color", "disable colors and prefer ASCII icons", false)
+    .option("--project <path>", "target project root", process.cwd())
+    .addHelpText("after", `\n${HELP_AFTER_PROPOSE_UPSTREAM.trim()}\n`)
+    .action(async (raw: ProposeUpstreamOpts) => {
+      const ui = mkUi(raw);
+      const code = await runProposeUpstreamCommand(ui, {
+        project: raw.project,
+        description: raw.description,
+      });
+      process.exitCode = code;
+    });
+
+  program
+    .command("unlink", { hidden: true })
+    .description("[deprecated] Use `cursor-kit eject` to mark files as locally owned")
     .option("--no-color", "disable colors and prefer ASCII icons", false)
     .option("--project <path>", "target project root", process.cwd())
     .option("--dry-run", "print actions without changing files", false)
@@ -175,6 +269,7 @@ async function main(): Promise<void> {
     .option("--force-remove-modified-copy", "remove managed copy entries even when they were modified locally", false)
     .addHelpText("after", `\n${HELP_AFTER_UNLINK.trim()}\n`)
     .action(async (raw: UnlinkOpts) => {
+      console.warn("cursor-kit: `unlink` is deprecated; use `cursor-kit eject <path...>` to mark files as locally owned.");
       const ui = mkUi(raw);
       const code = await runUnlinkCommand(ui, {
         project: raw.project,
@@ -238,24 +333,25 @@ async function main(): Promise<void> {
     .option("--force", "replace managed entries where needed", false)
     .option("--include-local", "include shared `local/` when present", false)
     .option("--source <kind>", "shared source: local (default), public, or auto", "auto")
-    .option("--source-repo <owner/repo>", "public source repository (used with --source public)")
+    .option("--repo <owner/repo>", "GitHub repository to use as shared source")
+    .option("--source-repo <owner/repo>", "alias for --repo (legacy name)")
+    .option("--branch <branch>", "branch to clone when using GitHub source")
     .option("--mode <mode>", "ignored (copy-only toolkit)", "copy")
     .option("--symlink", "ignored", false)
     .option("--copy", "ignored", false)
     .action(async (raw: InitKitOpts & { mode?: string; symlink?: boolean; copy?: boolean }) => {
       console.warn("cursor-kit: `link` is deprecated; use `cursor-kit init` (hard-copy kit).");
       const ui = mkUi(raw);
-      const resolvedSource = resolveSourceKind(raw);
-      const resolvedSharedSource = resolveSharedSourceKind(raw);
       const code = await runInitCommand(ui, {
         project: raw.project,
         shared: raw.shared,
         dryRun: raw.dryRun,
         force: raw.force,
         includeLocal: raw.includeLocal,
-        source: resolvedSource,
-        sharedSourceKind: resolvedSharedSource,
-        sourceRepo: raw.sourceRepo,
+        source: resolveSourceKind(raw),
+        sharedSourceKind: resolveSharedSourceKind(raw),
+        sourceRepo: resolveRepo(raw),
+        branch: raw.branch,
       });
       process.exitCode = code;
     });
