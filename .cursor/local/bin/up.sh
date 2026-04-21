@@ -8,19 +8,14 @@ cd "$ROOT_DIR"
 source "$BIN_DIR/config.sh"
 
 mkdir -p "$LOG_DIR" "$RUN_DIR"
-
-touch \
-  "$LOG_DIR/infra.log" \
-  "$LOG_DIR/app.log" \
-  "$LOG_DIR/worker.log" \
-  "$LOG_DIR/scheduler.log" \
-  "$LOG_DIR/studio.log"
+touch "$LOG_DIR/infra.log"
 
 start_proc() {
-  local name="$1"
-  local cmd="$2"
+  local name="$1" cmd="$2"
   local log_file="$LOG_DIR/${name}.log"
   local pid_file="$RUN_DIR/${name}.pid"
+
+  touch "$log_file"
 
   if [[ -f "$pid_file" ]]; then
     local old_pid
@@ -43,14 +38,17 @@ start_proc() {
   echo "[$name] started with PID $pid"
 }
 
-echo "==> Starting infra"
-bash -lc "$INFRA_UP_CMD" >>"$LOG_DIR/infra.log" 2>&1
+if [[ -n "${INFRA_UP_CMD:-}" ]]; then
+  echo "==> Starting infra"
+  bash -lc "$INFRA_UP_CMD" >>"$LOG_DIR/infra.log" 2>&1
+fi
 
 echo "==> Starting app processes"
-start_proc "$APP_NAME" "$APP_CMD"
-start_proc "$WORKER_NAME" "$WORKER_CMD"
-start_proc "$SCHEDULER_NAME" "$SCHEDULER_CMD"
-start_proc "$STUDIO_NAME" "$STUDIO_CMD"
+for entry in "${PROCESSES[@]}"; do
+  name="${entry%%|*}"
+  cmd="${entry#*|}"
+  start_proc "$name" "$cmd"
+done
 
 echo
 echo "Runtime root: $DEV_ROOT"

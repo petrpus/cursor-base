@@ -25,18 +25,21 @@ stop_proc() {
 }
 
 mkdir -p "$LOG_DIR" "$RUN_DIR"
+touch "$LOG_DIR/infra.log"
 
 echo "==> Stopping app processes"
-stop_proc "$APP_NAME"
-stop_proc "$WORKER_NAME"
-stop_proc "$SCHEDULER_NAME"
-stop_proc "$STUDIO_NAME"
+for entry in "${PROCESSES[@]}"; do
+  stop_proc "${entry%%|*}"
+done
 
-echo "==> Stopping infra"
-bash -lc "$INFRA_DOWN_CMD" >>"$LOG_DIR/infra.log" 2>&1 || true
+if [[ -n "${INFRA_DOWN_CMD:-}" ]]; then
+  echo "==> Stopping infra"
+  bash -lc "$INFRA_DOWN_CMD" >>"$LOG_DIR/infra.log" 2>&1 || true
+fi
 
-# fallback for stale listeners
-fuser -k "${APP_PORT}/tcp" 2>/dev/null || true
-fuser -k "${STUDIO_PORT}/tcp" 2>/dev/null || true
+for entry in "${PORTS[@]}"; do
+  port="${entry#*|}"
+  fuser -k "${port}/tcp" 2>/dev/null || true
+done
 
 echo "Done."
