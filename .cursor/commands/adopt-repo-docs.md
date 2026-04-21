@@ -18,6 +18,8 @@ This command is **not** a substitute for `cursor-kit`: it does not copy the shar
 2. **Discover** the repo (read-only inspection):
    - `package.json` — `name`, `private`, `scripts` keys, `dependencies` / `devDependencies` **names** (not versions); note workspace tools if `pnpm-workspace.yaml` / `package.json` workspaces exist.
    - Obvious stack markers when present (examples): `tsconfig.json`, `vite.config.*`, `next.config.*`, `prisma/schema.prisma`, `docker-compose.yml`, `.github/workflows/*` (high-level only).
+   - Python markers: `pyproject.toml`, `requirements.txt`, `Pipfile`, `setup.py`, `manage.py`.
+   - Go markers: `go.mod`, `go.sum`.
    - Top-level and `src/` (or `apps/`) layout at a coarse level — enough to describe architecture honestly, not a full static analysis.
 3. **Summarize** findings as a short **Repo profile** table or bullet list in the chat response (stack hints, runtime, data store if visible).
 4. **Create or update** these files when missing or clearly stale (prefer extending existing good content; never silently delete useful material — see repo-adoption instruction):
@@ -27,12 +29,40 @@ This command is **not** a substitute for `cursor-kit`: it does not copy the shar
    - `docs/ai/architecture-map.md` — systems and boundaries (runtime, data, integrations).
    - `docs/ai/workflow.md` — how work flows in this repo (branches, reviews, releases).
    - `docs/ai/domain-map.md` — domain language and bounded contexts (stub if unknown; mark TODOs).
-   - `docs/ai/coding-rules.md` — conventions agents must follow here.
+   - `docs/ai/coding-rules.md` — conventions agents must follow here; include stack-specific type discipline (e.g. avoid `any`, preferred patterns).
    - `docs/ai/dev-runtime.md` — local dev commands, ports, env files (paths specific to **this** repo).
+   - **`docs/ai/stack.md`** — project-specific technology stack (see **Stack doc** below).
+   - **`docs/ai/testing.md`** — project-specific testing approach (see **Testing doc** below).
    - **`AGENTS.md`** (repo root) — short local policy; must point at `docs/ai/README.md` as primary context.
+
+### Stack doc — `docs/ai/stack.md`
+
+Generate from the discovered stack profile. Include:
+- **Runtime** — language version, package manager, build tool.
+- **Framework** — web framework, routing library, rendering strategy.
+- **Data** — ORM/query builder, database(s), migration tool.
+- **Storage** — object storage, CDN if applicable.
+- **Jobs / async** — job queue, scheduler, worker setup.
+- **Testing** — unit runner, integration approach, e2e tool, coverage tooling.
+- **Tooling** — linter, formatter, type checker, CI platform.
+- **Type discipline** — strictness settings, conventions agents must follow (e.g. avoid `any`).
+
+Mark any section as `TODO` if not determinable from inspection.
+
+### Testing doc — `docs/ai/testing.md`
+
+Generate from the discovered testing setup. Include:
+- **Test runner and framework** — name, version hint, config file location.
+- **Test file conventions** — naming, co-location vs `__tests__/`, import aliases.
+- **Layers in use** — which of unit / integration / e2e are present and where.
+- **Coverage tooling** — provider, thresholds if configured.
+- **CI integration** — which workflow step runs tests, any environment requirements.
+- **Known gaps** — areas explicitly untested or marked TODO.
+
 5. **Optional — ask the user first** if they want product/design capture:
    - If yes, add or refresh **`docs/DESIGN.md`** (or the single design doc path the team already uses) with goals, non-goals, and links into `docs/ai`.
-6. **If the repo has a real UI stack** (React/Vue/etc. in deps and app code), schedule follow-up **`/adopt-design-system`** to fill `docs/ai/design-system.md`, `ui-stack.md`, and `ui-patterns.md` — do not duplicate that command’s full workflow here; a single sentence + link is enough.
+6. **If the repo has a real UI stack** (React/Vue/etc. in deps and app code), schedule follow-up **`/adopt-design-system`** to fill `docs/ai/design-system.md`, `ui-stack.md`, and `ui-patterns.md` — do not duplicate that command's full workflow here; a single sentence + link is enough.
+7. **If the repo has infra files** (`docker-compose.yml`, `Makefile`, `Procfile`, etc.), schedule follow-up **`/adopt-dev-env`** to generate runtime scripts and `docs/ai/dev-runtime.md` — do not duplicate that command's full workflow here.
 
 ## Cloud agents (separate command — default skip)
 
@@ -50,4 +80,4 @@ Report:
 - **Files created or updated** (paths).
 - **Repo profile** summary (stack / architecture / scripts).
 - **Link graph**: how `docs/ai/README.md` connects to other `docs/ai` pages and `docs/`.
-- **Follow-ups**: open questions, TODOs left intentionally, and recommended next commands (e.g. `/adopt-design-system`, `/docs-update`). Mention **`/adopt-cloud-env`** only if the user asked for Cloud agent / `environment.json` work in this session.
+- **Follow-ups**: open questions, TODOs left intentionally, and recommended next commands (e.g. `/adopt-design-system`, `/adopt-dev-env`, `/docs-update`). Mention **`/adopt-cloud-env`** only if the user asked for Cloud agent / `environment.json` work in this session.
