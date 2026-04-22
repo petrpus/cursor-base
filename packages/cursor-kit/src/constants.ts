@@ -19,6 +19,7 @@ export const DEFAULT_LINK_DIRS = [
   "docs",
   "hooks",
   "rules",
+  "skills",
 ] as const;
 
 export const DEFAULT_LINK_FILES = ["README.md", "manifest.md"] as const;

@@ -1,6 +1,6 @@
 {
   "name": "cursor-kit",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "CLI to copy the shared Cursor toolkit from cursor-base into your project repository",
   "type": "module",
   "license": "MIT",
