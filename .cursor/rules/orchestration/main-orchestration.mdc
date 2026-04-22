@@ -37,6 +37,11 @@ When instructions conflict, follow `.cursor/rules/01-policy-precedence.mdc`.
 - large cleanup or simplification work → `refactor-agent`
 - local runtime operations or diagnosis → `dev-runtime`
 - documentation updates, READMEs, `docs/` organization → `docs-agent`
+- render/query/bundle performance bottlenecks → `performance-agent`
+- environment variables, feature flags, startup config → `env-config-agent`
+- dependency security audits, license review, supply chain → `dependency-audit-agent`
+- database seed fixtures, test factories → `seed-agent`
+- session metrics, delegation patterns, cost analysis → `metrics-analyst-agent`
 
 ## Parallel delegation
 
