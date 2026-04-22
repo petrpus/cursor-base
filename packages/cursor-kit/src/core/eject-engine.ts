@@ -28,7 +28,6 @@ export async function runEjectEngine(input: EjectEngineInput): Promise<EjectEngi
   }
 
   const rows: EjectRow[] = [];
-  let changed = false;
 
   const updatedManaged = manifest.managed.map((entry) => {
     if (!input.paths.includes(entry.path)) return entry;
@@ -39,7 +38,6 @@ export async function runEjectEngine(input: EjectEngineInput): Promise<EjectEngi
     }
 
     rows.push({ path: entry.path, status: "ejected", detail: "marked as locally owned; cursor-kit update will skip it" });
-    changed = true;
     return { ...entry, ejected: true as const };
   });
 
@@ -49,6 +47,7 @@ export async function runEjectEngine(input: EjectEngineInput): Promise<EjectEngi
     }
   }
 
+  const changed = rows.some((r) => r.status === "ejected");
   if (changed && !input.dryRun) {
     await writeManifest(input.projectRoot, { ...manifest, managed: updatedManaged });
   }

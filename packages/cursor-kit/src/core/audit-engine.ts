@@ -33,7 +33,9 @@ async function listMdNames(dir: string): Promise<Set<string>> {
         names.add(basename(e.name, ".md"));
       }
     }
-  } catch {}
+  } catch {
+    // ignore unreadable directories
+  }
   return names;
 }
 
@@ -52,7 +54,9 @@ async function listMdcAndMdFiles(dir: string): Promise<{ path: string; name: str
           results.push({ path: full, name: e.name });
         }
       }
-    } catch {}
+    } catch {
+      // ignore unreadable directories
+    }
   }
 
   await walk(dir);
