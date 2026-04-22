@@ -10,7 +10,7 @@ globs:
   - "**/database/**"
 ---
 
-When these paths or patterns are touched, consult `database-agent` before finalization.
+When these paths or patterns are touched, consult `database-agent` before finalization. See also [.cursor/docs/orchestration-routing.md](.cursor/docs/orchestration-routing.md) for the full matrix.
 
 Required for L2+:
 - database review summary present in task closeout

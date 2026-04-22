@@ -31,11 +31,11 @@ version: 1.0.0
 Classify the task consistently so routing, verification, and budgeting are proportional to risk.
 
 ## When to invoke
-- Every non-trivial task.
-- Any task with unclear impact scope.
+- **L2+** work, and **L1** when impact scope is unclear.
+- Use before assigning tier; align output with `risk-tiering.mdc` and `main-orchestration.mdc`.
 
 ## When not to invoke
-- Tiny, local, obvious non-behavioral edits (for example typo-only docs fix).
+- **L1** micro, local, obvious non-behavioral edits (e.g. typo-only docs).
 
 ## Inputs required
 - `task_id`, `task_title`

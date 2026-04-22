@@ -11,7 +11,7 @@ How to use the two-tier skill system to run inline checks before (or instead of)
 
 Running L2 skills inline is **always cheaper** than delegating. The goal: only delegate to a specialist when an L2 check returns FAIL or the task's risk tier mandates a full review.
 
-## Standard inline skill pass (Step 5 of main workflow)
+## Standard inline skill pass (before broad delegation; see `main-orchestration.mdc`)
 
 Before delegating to any specialist, run the L2 skills that match the changed areas. Collect all FAIL/WARN results, then delegate only once with all findings bundled:
 

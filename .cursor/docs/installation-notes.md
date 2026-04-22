@@ -7,6 +7,6 @@
    - Run a short Cursor session and confirm files are created in `tmp/chat-logs/`.
    - If logs look incomplete, inspect `tmp/chat-logs/_logger-errors.log` and the latest `tmp/chat-logs/machine/*.jsonl`.
 4. If you rely on slash commands, keep `.cursor/commands/` as provided.
-5. For best delegation results, start non-trivial tasks with language like:
-   - "Plan this change and delegate to the relevant specialists first."
-   - "Use the orchestrator and matching specialists before implementation."
+5. For best delegation results, start **L2+** work with a clear **risk scope** and intent to use the **tier** workflow, e.g.:
+   - "L2: plan and delegate to the relevant specialists before implementation."
+   - "Classify risk tier, then use `orchestrator` / matching specialists as per `risk-tiering`."

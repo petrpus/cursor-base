@@ -9,6 +9,6 @@ globs:
   - "docs/ai/*.md"
 ---
 
-For non-trivial UI changes, consult the matching UI specialists before implementation.
+For **L2+** UI work, consult the matching UI specialists before implementation (see `.cursor/rules/frontend/frontend-triggers.mdc` and `.cursor/docs/orchestration-routing.md`).
 Prefer existing repository conventions over invented patterns.
 Shared UI changes must go through design-system review.

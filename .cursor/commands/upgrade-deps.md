@@ -52,7 +52,7 @@ Delegate to **`change-verifier`** with a prompt to run the full check (type chec
 
 If tests fail:
 - For test failures related to the upgraded package: delegate to **`testing-agent`** to adapt tests or fix compatibility issues.
-- If the fix is non-trivial: revert the specific package and note it as "blocked" in the output.
+- If the fix is **L2+** (e.g. breaking API, behavior change) or you cannot complete safely: revert the specific package and note it as "blocked" in the output.
 
 Repeat until `change-verifier` passes or all failed packages are reverted/noted.
 

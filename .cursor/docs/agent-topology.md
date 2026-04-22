@@ -44,4 +44,4 @@ For teams that want delegation "in the DNA", add a fourth lever:
 - docs-agent (documentation keeping; suited to cheap/fast model, run frequently)
 
 ## Important note
-If a task is tiny and obviously local, Cursor may choose not to delegate. The setup below biases strongly toward delegation for non-trivial work, but cannot mathematically force every single task. The closest practical equivalent is strong routing plus verification gates.
+**L1** and tiny local work may not require specialist runs. For **L2+**, the tier router in `main-orchestration.mdc` / `risk-tiering.mdc` requires a **plan-review** delegate and (where triggers match) specialists before finalization. Path-based rules cannot force every turn, but they keep routing consistent.

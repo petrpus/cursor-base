@@ -15,7 +15,7 @@ globs:
   - "**/*handler*"
 ---
 
-Security-sensitive surfaces require `security-agent` review before finalization.
+Security-sensitive surfaces require `security-agent` review before finalization. See [.cursor/docs/orchestration-routing.md](.cursor/docs/orchestration-routing.md) for context.
 
 Enforce:
 - Include security findings in specialist summary.

@@ -10,9 +10,9 @@ This file defines universal model-tier policy for repositories using this Cursor
 
 ## Tier definitions
 
-- **Tier A (fast/low cost):** quick analysis, docs upkeep, routine hygiene.
+- **Tier A (fast/low cost):** quick analysis, docs upkeep, routine hygiene, **L3 economy plan phases** when `risk-tiering` allows.
 - **Tier B (balanced):** default for orchestration and implementation.
-- **Tier C (high capability):** reserved for high-risk and high-ambiguity tasks.
+- **Tier C (high capability):** reserved for high-risk and high-ambiguity implementation and gates.
 
 ## Default agent-to-tier mapping
 
@@ -23,6 +23,7 @@ This file defines universal model-tier policy for repositories using this Cursor
 - design-token-auditor
 - responsive-accessibility-auditor
 - dev-runtime (routine diagnosis)
+- **L3 economy:** `orchestrator` / area specialists for **plan-only** passes when the task stays **L3** (not L4) and the closeout records **L3 economy** (see `risk-tiering.mdc`).
 
 ### Tier B defaults
 
@@ -42,6 +43,14 @@ This file defines universal model-tier policy for repositories using this Cursor
 - change-verifier for L3/L4 final gate
 - compliance-verifier for L4 and policy-sensitive work
 
+## L3 economy (cost control)
+
+When **L3 economy** is declared in the closeout (per `risk-tiering.mdc`):
+
+- prefer **Tier A** for read-only / plan / triage sub-steps,
+- keep **Tier C** for **security-agent**, **database-agent** on hot paths, and **change-verifier** on L3/L4 gates as required,
+- do not use economy to skip **mandatory** verifiers or sensitive-path reviews.
+
 ## Escalation policy
 
 Use staged escalation:
@@ -56,19 +65,14 @@ If escalating, include rationale in closeout:
 - why higher tier is needed,
 - expected value from escalation.
 
-## Budget policy
+## Budget policy (session envelope)
 
-For non-trivial tasks, define soft budget envelope:
+For **L2+** work, define a **session budget envelope** in the first relevant assistant message: token/cost/time soft targets.
 
-- token soft limit,
-- cost soft limit,
-- latency target.
+- **Hard stop (kit policy):** if the running estimate **exceeds the declared envelope**, **stop and ask the user** before more delegation. The user may raise the envelope in chat.
+- If exceeded, record in closeout: exceedance reason, mitigation, `budget_outcome` (within / near-limit / exceeded + reason if exceeded). Use `budget-governance-skill` for L3/L4 or cost-critical work.
 
-If exceeded, record:
-
-- exceedance reason,
-- mitigation attempted,
-- whether scope/risk justified overrun.
+**L1** and explicit “unbounded exploration” requests are exempt from envelope unless the user set a cap.
 
 ## Data handling constraints
 

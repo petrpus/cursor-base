@@ -1,34 +1,43 @@
 ---
-description: Risk-tiered orchestration and mandatory gates
+description: Risk-tiered orchestration and mandatory gates (L1–L4)
 alwaysApply: true
 ---
 
-For non-trivial work, assign a risk tier before implementation and enforce required routing and verification.
+Assign a **risk tier (L1–L4)** before implementation and enforce routing, **plan review**, and verification. Use the **highest** applicable tier.
 
 ## Tier assignment
 
-Use the highest applicable tier:
+- **L1 (low):** docs-only, strictly local, behavior-preserving cleanup, low regression risk, **L1 micro** tasks (e.g. typo, comment, format).
+- **L2 (moderate):** normal behavior changes, feature work, non-sensitive route/form/API updates.
+- **L3 (high):** auth/authz/session, sensitive data flow, contracts with compatibility risk, migration- or performance-sensitive data access, business-critical logic.
+- **L4 (critical):** combined security + data impact, compliance-sensitive changes, high blast-radius production risk, or high-risk change with **unresolved ambiguity** (treat as L4 until resolved).
 
-- **L1 (low)**: docs-only or strictly local, behavior-preserving cleanup with low regression risk
-- **L2 (moderate)**: normal behavior changes, feature work, non-sensitive route/form/API updates
-- **L3 (high)**: auth/authz/session changes, sensitive data flow changes, contract changes with compatibility risk, migration/performance-sensitive data access, business-critical logic
-- **L4 (critical)**: combined security + data impact, compliance-sensitive changes, high-blast-radius production risk, or any high-risk change with unresolved ambiguity
+## L2: plan-review floor
+
+- **At least one** subagent run for **plan review** (synthesis and risk check **before** implementation): typically **`orchestrator`**, or the **best-matching** area specialist (e.g. `frontend-architecture-agent` for UI, `testing-agent` for test-heavy work) when scope is narrow.
+- **Consult** matching specialists from path/glob **trigger** rules (`.cursor/rules/**`); include testing coverage rationale.
+- You may use **one bundled** call with all matching concerns instead of one specialist per file.
+
+## L3: full vs L3 economy
+
+- **L3 full:** all matching specialists per triggers and [.cursor/docs/orchestration-routing.md](.cursor/docs/orchestration-routing.md); full verification; default when unsure.
+- **L3 economy (allowed when justified):** reduce **parallel** fan-out; use **lower model tier** for **plan** phases (see `.cursor/context/model-governance.md`); do **not** drop mandatory **`security-agent`** on sensitive paths, `change-verifier` before commit recommendation, or tier-mandated reviews. Document the economy choice in the closeout.
 
 ## Required specialists by tier
 
-- **L1**: specialist optional, but explain why any matching specialist was skipped
-- **L2**: consult matching specialists from trigger rules; include testing coverage rationale
-- **L3**: consult all matching specialists; security review is mandatory for sensitive paths; verification must be full-scope unless explicitly risk-accepted
-- **L4**: consult all matching specialists + run `compliance-verifier`; require explicit residual-risk signoff path and document any waived gates
+- **L1:** optional; if a trigger matches a specialist and you skip, **brief** rationale.
+- **L2:** plan-review (above) + matching specialists from triggers; testing rationale.
+- **L3:** L3 full or L3 economy (constraints above); security mandatory for sensitive paths; verification full unless risk-accepted in closeout.
+- **L4:** all matching specialists + **`compliance-verifier`**; document waived gates and residual risk.
 
 ## Required verification by tier
 
-- **L1**: targeted checks
-- **L2**: lint/typecheck/tests/build as relevant
-- **L3/L4**: full relevant verification matrix and explicit residual risk statement
+- **L1:** targeted checks.
+- **L2:** lint / typecheck / tests / build as relevant.
+- **L3 / L4:** full relevant verification and explicit **residual risk** (or signoff path for L4).
 
 ## Hard rules
 
-- If tier increases during execution, apply the stricter tier immediately.
-- If a required specialist is not consulted, fail finalization and state blocker.
-- If required verification is skipped, document reason, risk, and compensating controls.
+- If tier **rises** during work, apply the stricter tier **immediately**.
+- If a **required** specialist output is missing, **block** finalization and state the blocker.
+- If verification is skipped, document reason, risk, and compensating controls.

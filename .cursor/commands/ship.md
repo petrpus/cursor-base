@@ -4,6 +4,8 @@ Run the full **code → verify → docs → commit → PR** pipeline for the cur
 
 Use after completing a feature or fix. Not a substitute for running tests yourself during development — `/ship` is the final quality gate before merge.
 
+Aligns with the tier router in `.cursor/rules/orchestration/risk-tiering.mdc` and `main-orchestration.mdc`: treat this command as a **L2+** quality gate (typically L3 if shipping auth/data/API surface).
+
 ## Required workflow
 
 ### Phase 1 — Audit and pre-flight (parallel)
@@ -21,7 +23,7 @@ For each class of error:
 | Error type | Specialist |
 |-----------|-----------|
 | Test failures | **`testing-agent`** |
-| Type errors / lint | **`code-reviewer`** inline (fix in place) |
+| Type errors / lint | built-in agent or **`implementation-agent`**: fix in place, then re-verify |
 | Security findings | **`security-agent`** |
 | Broken cursor references (`-agent`/`-skill`) | inline fix in the referencing file |
 

@@ -10,7 +10,7 @@ This command is **not** a substitute for `cursor-kit`: it does not copy the shar
 2. **Mandatory reads for the agent** (before writing):
    - `.cursor/context/repo-adoption-instruction.md`
    - `.cursor/context/project-docs-contract.md`
-3. **Orchestration:** for non-trivial gaps, plan first and delegate to specialists (see `.cursor/rules/orchestration/delegation-dna.mdc`).
+3. **Orchestration:** for **L2+** adoption gaps, plan first and delegate to specialists (see `.cursor/rules/orchestration/main-orchestration.mdc`).
 
 ## Required workflow
 

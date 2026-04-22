@@ -28,7 +28,7 @@ version: 1.0.0
 Keep task execution within budget guardrails while preserving required quality and risk controls.
 
 ## When to invoke
-- Non-trivial tasks with explicit budget envelope.
+- **L2+** tasks with explicit **session budget** envelope, or L3/L4.
 - Repeated delegation rounds or verification retries.
 - L4 tasks (strict mode mandatory).
 

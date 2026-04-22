@@ -24,7 +24,7 @@ version: 1.0.0
 Define the minimum complete specialist set and safe execution ordering.
 
 ## When to invoke
-- any non-trivial task after risk triage
+- any **L2+** task after risk triage
 - any task with potential multi-specialist routing
 
 ## When not to invoke

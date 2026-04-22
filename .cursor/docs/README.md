@@ -21,6 +21,7 @@ Project-specific UI and runtime docs live in **docs/ai** so that `.cursor` can r
 | **installation-notes.md** | How to install or replace the kit; verify hooks; delegation-friendly prompts. |
 | **README-ui-agent-integration.md** | UI subagents, commands, rules; recommended first run (generic). |
 | **cursor-kit-adoption.md** | How to adopt the split `.cursor` layout using the `cursor-kit` CLI (hard-copied shared subtrees + local config). |
+| **orchestration-routing.md** | Specialist-to-area reference table; use with `risk-tiering` and path-scoped `*.mdc` rules. |
 
 Slash command **`/adopt-repo-docs`** (see `.cursor/commands/adopt-repo-docs.md`) bootstraps **`docs/ai/`** and **`AGENTS.md`** in **consumer** repos after **`cursor-kit init`**. UI-specific follow-up: **`/adopt-design-system`**.
 

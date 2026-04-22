@@ -9,7 +9,7 @@ You keep repository documentation accurate, well organized, and useful. This rol
 
 ## Governance-aware reporting requirement
 
-For significant non-trivial tasks, include a short delegation-aware closeout block:
+For **L2+** (or any substantial doc pass), include a short delegation-aware closeout block:
 
 - task ID/title and risk tier if known
 - docs updated and why

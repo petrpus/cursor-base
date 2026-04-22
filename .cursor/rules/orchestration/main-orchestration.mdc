@@ -1,87 +1,60 @@
 ---
-description: Main orchestration enforcement
+description: Main orchestration — tier router, session budget, delegation, closeout
 alwaysApply: true
 ---
 
-For any non-trivial task, the built-in Agent must act as an orchestrator first and an implementer second.
+Route all work by **risk tier (L1–L4)**, not by vague “size” words. When instructions conflict, follow `.cursor/rules/01-policy-precedence.mdc`.
 
-When instructions conflict, follow `.cursor/rules/01-policy-precedence.mdc`.
+## Session budget (hard)
 
-## Required workflow
+For **L2+** tasks (and any task where the user sets a limit), state early in the response: **task_id**, **risk tier**, and a **session budget envelope** (token/cost/time soft targets).
 
-1. Identify affected areas by task intent and touched files.
-2. Assign risk tier using `.cursor/rules/orchestration/risk-tiering.mdc` (L1–L4, highest-tier-wins).
-3. Adopt repository state first when the area is unfamiliar, architecture-sensitive, or design-system-sensitive — use `docs/ai` as the primary project context.
-4. Make a short plan with specialist matrix and budget envelope.
-5. Run relevant inline skill checks before delegating (see `.cursor/context/skill-composition-guide.md`); pass findings as context to agents.
-6. Explicitly delegate to matching specialist subagents; parallelize independent reviews (see **Parallel delegation** below).
-7. Summarize specialist findings and resolve conflicts.
-8. Implement using the agreed approach (single-writer default per phase).
-9. Run `change-verifier` before preparing commit(s).
-10. Run `compliance-verifier` for L4 or policy-sensitive changes.
-11. Delegate to `commit-agent` before **any** mutating git operation: staging strategy, boundaries, messages, and prepare-only vs allowed writes per `.cursor/rules/commit/commit-policy.md`.
-12. Include a structured closeout in the final response (see **Closeout requirements** below).
+- If the running cost or token estimate **exceeds the declared envelope**, **stop and ask the user** before more delegation or long reasoning. Do not silently continue.
+- If the envelope is **exceeded by >50%** or scope explodes, stop, report, and use `budget-governance-skill` for L3/L4 or budget-critical requests.
+- **L1** and explicit **unbounded / exploratory** user requests are exempt from envelope stops unless the user set a limit.
 
-## Mandatory specialist routing
+## Tier behavior (summary)
 
-- shared UI components, tokens, styling rules, component variants → `design-system-agent` or `design-system-guardian`
-- route modules, pages, forms, tables, admin UX, layout composition → `frontend-architecture-agent`
-- accessibility, keyboard flow, responsive behavior, error/empty/loading states → `ux-accessibility-agent` or `responsive-accessibility-auditor`
-- routes, loaders, actions, auth, uploads, secrets, sensitive operations → `security-agent`
-- behavior changes, regressions, new features, bug fixes → `testing-agent`
-- schemas, DTOs, input/output validation, contract changes → `api-contract-agent`
-- Prisma schema, migrations, query shape, indexing, transactions → `database-agent`
-- queue jobs, background processing, retry strategy, DLQ → `jobs-agent`
-- logging, tracing, auditability → `observability-agent`
-- domain-critical business rules → `domain-agent`
-- large cleanup or simplification work → `refactor-agent`
-- local runtime operations or diagnosis → `dev-runtime`
-- documentation updates, READMEs, `docs/` organization → `docs-agent`
-- render/query/bundle performance bottlenecks → `performance-agent`
-- environment variables, feature flags, startup config → `env-config-agent`
-- dependency security audits, license review, supply chain → `dependency-audit-agent`
-- database seed fixtures, test factories → `seed-agent`
-- session metrics, delegation patterns, cost analysis → `metrics-analyst-agent`
+| Tier | Orchestration | Plan-review specialist |
+|------|----------------|------------------------|
+| **L1** | Light: implementer mode OK | Optional; explain if skipped |
+| **L2** | Orchestrator + plan | **≥1** specialist for **plan review** (synthesis before implementation) — use `orchestrator` or the best-matching area specialist; bundle findings |
+| **L3** | Full: specialists + verification | Required; use **L3 full** or **L3 economy** (see `risk-tiering.mdc`) |
+| **L4** | Full + `compliance-verifier` | Required; all gates blocking |
+
+Use **L3 economy** (lighter/cheaper) only when `risk-tiering` allows: fewer parallel reviews, plan phases on lower model tiers, without dropping mandatory verifiers or `security-agent` on sensitive paths. See `.cursor/context/model-governance.md`.
+
+## Required workflow (L2+)
+
+1. Assign tier (`.cursor/rules/orchestration/risk-tiering.mdc`); use `risk-triage-skill` when uncertain.
+2. For **L2+**, run **plan-review** delegation (≥1 specialist) **before** implementation, except where glob triggers already mandate the same.
+3. Adopt context via `docs/ai` when the area is unfamiliar (`.cursor/rules/00-project-docs.mdc`).
+4. Make a short plan with **budget envelope** and specialist matrix. Run inline L2 skills before broad delegation (`.cursor/context/skill-composition-guide.md`).
+5. Delegate to matching specialists; **parallelize** only independent non-overlapping work; one implementation writer per phase by default.
+6. Implement, then run **`change-verifier`** before commit recommendations.
+7. Run **`compliance-verifier`** for L4 or when policy requires.
+8. Delegate to **`commit-agent`** before any **mutating** git operation (`.cursor/rules/commit/commit-policy.md`).
+9. **Closeout** (L2+): use the schema below. **L1** may use a **minimal** closeout: task_id, tier, what changed, verification, residual risk.
+
+**Specialist lookup:** path globs in `.cursor/rules/**` first; else [.cursor/docs/orchestration-routing.md](.cursor/docs/orchestration-routing.md).
 
 ## Parallel delegation
 
-Parallelize only independent specialties with non-overlapping write ownership in the same batch.
-Prefer review/findings phases in parallel; converge to a single implementation writer by default.
-Resolve security-sensitive recommendation conflicts before implementation proceeds.
-Do not exceed the declared budget envelope without explicit rationale in closeout.
-If an unresolved high-severity conflict remains after synthesis, halt and report instead of forcing implementation.
+Parallelize only independent specialties. Resolve security conflicts before implementation. If a **hard budget stop** was triggered, document `budget_outcome` in the closeout.
 
-## Budget checkpoint
+## Hard enforcement
 
-Before delegating to a third or later specialist in a single session, verify the budget envelope is not exceeded:
+- **L2+:** do not finalize without required specialist outputs and **plan-review** for L2+ (see `risk-tiering.mdc` for waivers).
+- **L3/L4:** required specialists are blocking where tier demands; **L4:** `compliance-verifier` is mandatory.
+- Do not recommend commit before verification. No mutating git before `commit-agent` where policy applies.
 
-- If the running cost / token estimate exceeds the declared budget envelope by >50%, stop and report to the user before continuing.
-- If a single specialist's output is unexpectedly large (e.g. `docs-agent` rewriting docs unrelated to the change), flag scope creep and narrow the delegation.
-- Use `budget-governance-skill` when a task has an explicit cost constraint or is at L3/L4.
-- When the budget is exceeded: document it in the closeout `budget_outcome` field with the reason. Do not silently continue.
+## Closeout and delegation report (L2+)
 
-## Hard enforcement rules
+Merge the following into one **closeout** (also the **delegation report**):
 
-- L2+: do not finalize without required specialist delegation and outputs.
-- L3/L4: required specialist outputs are blocking gates.
-- L4: `compliance-verifier` is a mandatory blocking gate.
-- Do not skip a matching specialist for convenience.
-- Do not recommend a commit before verification.
-- Do not recommend or run mutating git operations before `commit-agent` (per commit policy) and verification where policy requires it.
+- **Task summary** — `task_id`, risk tier, change type, acceptance criteria, **budget_outcome** (within / near-limit / exceeded + reason if exceeded).
+- **Delegation ledger** — who was delegated, why, outcome used/rejected; whether delegation helped (success / partial / failure).
+- **Skipped specialist rationale** when a required one was not used.
+- **Conflicts and resolutions**; **verification evidence**; **residual risk**; **follow-up items**.
 
-## Closeout requirements
-
-Every non-trivial task final response must include a structured closeout:
-
-- **Task summary** — `task_id`, risk tier, change type, acceptance criteria status.
-- **Delegation ledger** — who was delegated, why, outcome used/rejected.
-- **Skipped specialist rationale** — compensating controls for any skipped required specialist.
-- **Conflicts and resolution decisions** — how specialist disagreements were resolved.
-- **Verification evidence** — commands run and outcomes.
-- **Residual risk** — explicit statement or "none" with rationale.
-- **Budget summary** — tokens/cost/time when available.
-- **Follow-up items** — open questions, deferred work.
-
-Temporary governance artifacts, plans, and working notes must be kept under `tmp/`.
-Do not delegate only for optics; every delegation must have expected value.
-For high-risk tasks, unresolved specialist conflicts must block finalization.
+If no delegation was used and tier allowed skipping, state **concrete reason** and **risk**. Plans and temp artifacts: `tmp/` (`.cursor/rules/plans-in-tmp.mdc`).

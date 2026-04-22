@@ -31,7 +31,7 @@ Update documentation to reflect current behavior and governance changes without 
 
 ## When to invoke
 - rules, commands, agents, runtime scripts, APIs, or workflows changed
-- closeout for non-trivial work requires documentation alignment
+- closeout for **L2+** work may require documentation alignment
 
 ## When not to invoke
 - no user-facing, operator-facing, or governance-facing surface changed

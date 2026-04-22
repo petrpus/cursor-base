@@ -11,7 +11,7 @@ globs:
 
 When a task updates or reorganizes documentation, the agent must consult `docs-agent` before finalization.
 
-For non-trivial docs work, include:
+For **L2+** or structurally significant docs work, include:
 - documented scope,
 - consistency/interlinking checks,
 - follow-up doc gaps.

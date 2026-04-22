@@ -1,22 +1,6 @@
 ---
-description: Delegation-first delivery discipline
+description: Delegation discipline (canonical: main-orchestration)
 alwaysApply: true
 ---
 
-For any non-trivial task, behave as an orchestrator first:
-
-1) make a short plan
-2) call matching specialist subagents before implementation
-3) summarize specialist findings
-4) implement only after specialist input
-5) run verification checks before commit recommendation
-6) delegate to `commit-agent` before any mutating git operation (per `.cursor/rules/commit/commit-policy.md`)
-
-Before final response, add a "Delegation report" that includes:
-- delegated specialists and why they were selected
-- key recommendations from each specialist
-- whether delegation improved outcome (success/partial/failure)
-- checks executed (lint, typecheck, tests, build, security if relevant)
-- residual risk
-
-If no delegation was used, provide a concrete reason and explicit risk statement.
+**Delegation and closeout are defined in** `.cursor/rules/orchestration/main-orchestration.mdc` (tier-based workflow, L2+ plan-review floor, **delegation report = closeout**, `commit-agent` before mutating git). Do not duplicate; follow that file.

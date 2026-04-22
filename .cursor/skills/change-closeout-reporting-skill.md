@@ -32,7 +32,7 @@ Generate a complete, auditable closeout that explains what was done, why delegat
 
 ## When to invoke
 
-- for every non-trivial task,
+- for every **L2+** task (L1: minimal closeout is OK),
 - for all L2+ tasks as mandatory,
 - before final recommendation/summary.
 

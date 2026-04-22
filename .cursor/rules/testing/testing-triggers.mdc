@@ -10,7 +10,7 @@ globs:
   - "**/jobs/**"
 ---
 
-Use `testing-agent` for any task that changes behavior, fixes a bug, adds a feature, changes a form, changes a route, or affects database logic.
+Use `testing-agent` for any task that changes behavior, fixes a bug, adds a feature, changes a form, changes a route, or affects database logic. See [.cursor/docs/orchestration-routing.md](.cursor/docs/orchestration-routing.md) for the full specialist matrix.
 
 ## Required outcomes
 - identify the minimum required test coverage

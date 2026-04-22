@@ -9,7 +9,7 @@ Run a safe UI refactor aligned with the repository's current design system and c
 4. use `ui-refactor-specialist` for the actual cleanup and normalization
 5. use `design-system-guardian` if reusable rules change
 6. use `design-token-auditor` if token normalization is involved
-7. use `responsive-accessibility-auditor` for non-trivial user-facing changes
+7. use `responsive-accessibility-auditor` for user-facing changes beyond **L1**-trivial (layout, a11y risk, or reflow)
 8. use `testing-agent` if behavior changes or regression risk exists
 
 ## Final output

@@ -8,7 +8,7 @@ globs:
   - "**/pages/**"
 ---
 
-When frontend or UI surfaces are touched, delegate to matching frontend specialists before implementation for L2+ tasks:
+When frontend or UI surfaces are touched, delegate to matching frontend specialists before implementation for **L2+** tasks. Full matrix: [.cursor/docs/orchestration-routing.md](.cursor/docs/orchestration-routing.md).
 
 - page composition, forms, tables, admin UX -> `frontend-architecture-agent`
 - shared UI component APIs and reusable primitives -> `design-system-agent`

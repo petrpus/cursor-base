@@ -1,31 +1,35 @@
 ---
 description: After substantial code changes, delegate docs-agent to align spec and dev docs
-alwaysApply: true
+alwaysApply: false
+globs:
+  - "**/*.{ts,tsx,js,jsx,mjs,cjs,mts,cts}"
+  - "**/prisma/**"
+  - "**/routes/**"
+  - "**/api/**"
+  - "**/docs/**"
+  - "docs/**"
+  - "docs/ai/**"
 ---
 
 # Post-change documentation review
 
-When work on this repository is **substantially** complete (before merge recommendation or closing the task), evaluate whether the change requires a **documentation alignment pass**.
+When work on this repository is **substantially** complete (before merge recommendation or closing the task), evaluate whether the change needs a **documentation alignment pass**. Applies when this rule is in context (matched paths above); for **L2+** work without these paths, still apply the same evaluation per `.cursor/rules/orchestration/risk-tiering.mdc` and your tier closeout.
 
 ## What counts as substantial
 
-Treat as **substantial** when the diff **materially affects** behavior, contracts, onboarding, or operations—for example:
+Treat as **substantial** when the diff **materially affects** behavior, contracts, onboarding, or operations — for example:
 
 - New or changed **routes**, **HTTP/API surfaces**, **background jobs**, **env vars**, or **integrations**
 - **Prisma schema** or migration expectations
 - New **features**, user-visible flows, or auth / authorization boundaries
-- Non-trivial **refactors** that move, rename, or split major modules
+- **Large** refactors that move, rename, or split major modules (typically **L3+** in risk terms)
 
-**Usually not substantial:** typo-only edits, comment-only changes, formatting, or a minimal bugfix with no impact on how the app is run, configured, or understood.
+**Usually not substantial:** typo-only edits, comment-only changes, formatting, or a minimal bugfix with no impact on how the app is run, configured, or understood (often **L1**).
 
 ## Required action when substantial
 
-1. Use the Task tool with **`subagent_type`: `docs-agent`** (documentation specialist).
-2. Scope the review at minimum to **`docs/spec/`** and **`docs/dev/`**: identify drift from the code, outdated procedures, and missing cross-links; **implement or list concrete edits** the user can apply.
-3. If the change affects **agent workflow**, adoption order, or design-system triggers, extend scope to relevant **`docs/ai/`** pages.
+1. Use the Task tool with **`subagent_type`: `docs-agent`**.
+2. Scope the review at minimum to **`docs/spec/`** and **`docs/dev/`**: identify drift, outdated procedures, and missing cross-links; **implement or list** concrete edits.
+3. If the change affects **agent workflow**, adoption order, or design-system triggers, extend to relevant **`docs/ai/`** pages.
 
-If a substantial change was delivered **without** a docs pass (e.g. time-boxed spike), state that in the **Delegation report** with explicit **residual risk**.
-
-## Delegation report
-
-Include the docs-agent review in the final **Delegation report** (per `orchestration/delegation-dna.mdc`): specialist used, key doc updates made or deferred, and outcome (success / partial / skipped with reason).
+If a substantial change was delivered **without** a docs pass, state that in the **closeout** with **residual risk** (per `.cursor/rules/orchestration/main-orchestration.mdc`).
