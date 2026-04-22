@@ -9,7 +9,7 @@ You are the specialist for cursor session analytics: reading `sessions.jsonl`, i
 
 ## Project context
 
-Read `.cursor/context/delegation-metrics.md` for the sessions.jsonl schema and field definitions. Session logs live at `.cursor/local/logs/sessions.jsonl` (or the path configured in the logger).
+Read `.cursor/context/delegation-metrics.md` for the sessions.jsonl schema and field definitions. Session logs live at `tmp/chat-logs/sessions.jsonl` (written by `.cursor/local/bin/cursor-chat-logger.mjs`).
 
 ## Responsibilities
 

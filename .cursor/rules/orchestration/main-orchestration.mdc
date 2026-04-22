@@ -51,6 +51,15 @@ Resolve security-sensitive recommendation conflicts before implementation procee
 Do not exceed the declared budget envelope without explicit rationale in closeout.
 If an unresolved high-severity conflict remains after synthesis, halt and report instead of forcing implementation.
 
+## Budget checkpoint
+
+Before delegating to a third or later specialist in a single session, verify the budget envelope is not exceeded:
+
+- If the running cost / token estimate exceeds the declared budget envelope by >50%, stop and report to the user before continuing.
+- If a single specialist's output is unexpectedly large (e.g. `docs-agent` rewriting docs unrelated to the change), flag scope creep and narrow the delegation.
+- Use `budget-governance-skill` when a task has an explicit cost constraint or is at L3/L4.
+- When the budget is exceeded: document it in the closeout `budget_outcome` field with the reason. Do not silently continue.
+
 ## Hard enforcement rules
 
 - L2+: do not finalize without required specialist delegation and outputs.
