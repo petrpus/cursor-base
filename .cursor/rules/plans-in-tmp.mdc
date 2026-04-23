@@ -5,8 +5,27 @@ alwaysApply: true
 
 # Plans and temporary docs in project tmp/
 
-**Always place temporary documents** (assessment plans, review reports, implementation checklists, and similar working docs) in the **project `tmp/` directory** at the repository root, not in `docs/` and not in the system `/tmp`.
+**Always place temporary documents** (assessment plans, review reports, implementation checklists, handovers, and similar working docs) in the **project `tmp/` directory** at the repository root, not in `docs/` and not in the system `/tmp`.
 
-- **Use:** `tmp/<descriptive-name>.md` (e.g. `tmp/agenius-intranet-balances-widgets-review-plan.md`).
-- **Do not** use the system `/tmp` path for these files so they remain visible in the workspace and under the project.
-- **Do not** put temporary or plan-only documents in `docs/`; keep `docs/` for committed, long-lived documentation.
+## Required structure
+
+Use these subfolders for consistency:
+
+- `tmp/plans/` - implementation plans and checklists
+- `tmp/summaries/` - session summaries and closeouts
+- `tmp/handovers/` - handoff notes for next contributor
+- `tmp/reviews/` - review notes and audits
+- `tmp/scratch/` - disposable drafts and ad hoc notes
+- `tmp/logs/` - task-specific command logs and outputs
+
+## Naming convention
+
+Use: `tmp/<subfolder>/YYYY-MM-DD__<task-or-ticket>__<short-slug>.md`
+
+Example: `tmp/handovers/2026-04-23__auth-redirect__agent-handover.md`
+
+## Hard rules
+
+- **Do not** use the system `/tmp` path for project working documents.
+- **Do not** put temporary or plan-only documents in `docs/`; keep `docs/` for long-lived documentation.
+- Keep temporary files under `tmp/` only, so repository ignore rules can exclude them from version control.
